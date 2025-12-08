@@ -12,6 +12,7 @@ import { GradesScreen } from '../../pages/grades/GradesScreen';
 import { ScheduleScreen } from '../../pages/schedule/ScheduleScreen';
 import { ProfileScreen } from '../../pages/profile/ProfileScreen';
 import { DocumentsScreen } from '../../pages/documents/DocumentsScreen';
+import { DocumentDetailScreen } from '../../pages/documents/DocumentDetailScreen';
 import { ApplicationsScreen } from '../../pages/applications/ApplicationsScreen';
 import { NewsScreen } from '../../pages/news/NewsScreen';
 import { CertificatesScreen } from '../../pages/certificates/CertificatesScreen';
@@ -40,6 +41,11 @@ const HomeStackNavigator = () => (
       name="Documents"
       component={DocumentsScreen}
       options={{ title: 'Документооборот' }}
+    />
+    <HomeStack.Screen
+      name="DocumentDetail"
+      component={DocumentDetailScreen}
+      options={{ title: 'Детали документа' }}
     />
     <HomeStack.Screen
       name="Registration"

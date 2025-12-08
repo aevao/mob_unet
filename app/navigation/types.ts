@@ -10,6 +10,7 @@ export type AuthStackParamList = {
 export type HomeStackParamList = {
   Home: undefined;
   Documents: undefined;
+  DocumentDetail: { documentId: number };
   Applications: undefined;
   News: undefined;
   Certificates: undefined;

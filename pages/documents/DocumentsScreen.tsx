@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { View, Pressable } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScreenContainer } from '../../shared/ui/ScreenContainer';
 import { AppScrollView } from '../../shared/ui/AppScrollView';
 import { ThemedText } from '../../shared/ui/ThemedText';
@@ -11,8 +13,12 @@ import { CreateDocumentModal } from '../../widgets/document/CreateDocumentModal'
 import { useDocumentStore } from '../../entities/document/model/documentStore';
 import { useThemeStore } from '../../entities/theme/model/themeStore';
 import type { Document, DocumentType } from '../../entities/document/model/types';
+import type { HomeStackParamList } from '../../app/navigation/types';
+
+type DocumentsScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Documents'>;
 
 export const DocumentsScreen = () => {
+  const navigation = useNavigation<DocumentsScreenNavigationProp>();
   const [activeTab, setActiveTab] = useState<DocumentType>('inbox');
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const {
@@ -75,8 +81,7 @@ export const DocumentsScreen = () => {
   };
 
   const handleDocumentPress = (document: Document) => {
-    // TODO: В будущем здесь будет навигация на детальную страницу документа
-    console.log('Document pressed:', document);
+    navigation.navigate('DocumentDetail', { documentId: document.id });
   };
 
   const handleCreateSuccess = () => {
