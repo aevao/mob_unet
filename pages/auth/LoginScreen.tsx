@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer } from '../../shared/ui/ScreenContainer';
 import { AppInput } from '../../shared/ui/AppInput';
@@ -10,12 +18,13 @@ import { ThemedText } from '../../shared/ui/ThemedText';
 import { ThemedCard } from '../../shared/ui/ThemedCard';
 
 export const LoginScreen = () => {
+  const navigation = useNavigation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ username?: string; password?: string }>({});
   const [passwordVisible, setPasswordVisible] = useState(false);
 
-  const { login, isLoading } = useAuthStore();
+  const { login, isLoading, hasPinCode } = useAuthStore();
 
   const validate = () => {
     const nextErrors: { username?: string; password?: string } = {};
@@ -37,6 +46,8 @@ export const LoginScreen = () => {
 
     try {
       await login({ username, password });
+      // После успешного входа needsPinSetup будет установлен в true (если PIN нет)
+      // AppNavigator автоматически покажет PIN экран
     } catch (error: any) {
       const message =
         error?.response?.data?.message || 'Не удалось войти. Проверьте данные и попробуйте снова.';
@@ -48,12 +59,21 @@ export const LoginScreen = () => {
     <ScreenContainer>
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <View className="flex-1 items-center justify-center px-3">
-          
-
-          <ThemedCard className="mt-4 w-full p-5">
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'center',
+            paddingHorizontal: 12,
+            paddingVertical: 20,
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <ThemedCard className="w-full p-5">
             <View className="flex-row items-center justify-between ">
             <ThemedText variant="title" className="mb-3 text-2xl font-semibold">
               Вход 
@@ -154,7 +174,7 @@ export const LoginScreen = () => {
               </TouchableOpacity>
             </View>
           </ThemedCard>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </ScreenContainer>
   );

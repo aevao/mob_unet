@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScreenContainer } from '../../shared/ui/ScreenContainer';
 import { AppScrollView } from '../../shared/ui/AppScrollView';
 import { ThemedText } from '../../shared/ui/ThemedText';
@@ -7,8 +9,12 @@ import { CertificateCard } from '../../widgets/certificate/CertificateCard';
 import { CertificateSkeleton } from '../../widgets/certificate/CertificateSkeleton';
 import { useCertificateStore } from '../../entities/certificate/model/certificateStore';
 import type { Certificate } from '../../entities/certificate/model/types';
+import type { HomeStackParamList } from '../../app/navigation/types';
+
+type CertificatesScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Certificates'>;
 
 export const CertificatesScreen = () => {
+  const navigation = useNavigation<CertificatesScreenNavigationProp>();
   const { certificates, isLoading, error, fetchCertificates } = useCertificateStore();
 
   useEffect(() => {
@@ -17,8 +23,8 @@ export const CertificatesScreen = () => {
   }, []);
 
   const handleCertificatePress = (certificate: Certificate) => {
-    // TODO: В будущем здесь будет запрос на получение конкретной справки
-    console.log('Certificate pressed:', certificate);
+    // Используем certificate.id как referenceId для получения деталей справки
+    navigation.navigate('CertificateDetail', { referenceId: certificate.id });
   };
 
   return (

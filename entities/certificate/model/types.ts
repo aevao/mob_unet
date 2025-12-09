@@ -9,3 +9,15 @@ export interface Certificate {
   description: string;
 }
 
+export interface CertificateDetail {
+  id: string;
+  created_at: string;
+  file: string;
+  number_reference: string | null;
+  organ: string;
+  service: number;
+  service_name: string;
+  user: number;
+  user_fullname: string;
+}
+

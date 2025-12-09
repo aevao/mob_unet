@@ -3,12 +3,15 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ThemedText } from '../../shared/ui/ThemedText';
 import { SectionCard } from '../../shared/ui/SectionCard';
+import { isSectionVisible } from '../../shared/lib/roleUtils';
+import { useAuthStore } from '../../entities/session/model/authStore';
 import type { HomeStackParamList } from '../../app/navigation/types';
 
 type SectionsListNavigationProp = NativeStackNavigationProp<HomeStackParamList>;
 
 export const SectionsList = () => {
   const navigation = useNavigation<SectionsListNavigationProp>();
+  const { user } = useAuthStore();
 
   // Функция для переключения между табами
   const navigateToTab = (tabName: 'GradesTab' | 'ScheduleTab') => {
@@ -25,6 +28,7 @@ export const SectionsList = () => {
       </ThemedText>
 
       <View className="gap-1">
+        {/* Документооборот - для всех */}
         <SectionCard
           title="Документооборот"
           icon="document-text-outline"
@@ -33,15 +37,20 @@ export const SectionsList = () => {
             navigation.navigate('Documents');
           }}
         />
-        <SectionCard
-          title="Регистрация на дисциплины"
-          icon="book-outline"
-          description="Выбор дисциплин и потоков"
-          onPress={() => {
-            navigation.navigate('Registration');
-          }}
-        />
 
+        {/* Регистрация на дисциплины - только для студентов */}
+        {isSectionVisible(user?.role, ['student']) && (
+          <SectionCard
+            title="Регистрация на дисциплины"
+            icon="book-outline"
+            description="Выбор дисциплин и потоков"
+            onPress={() => {
+              navigation.navigate('Registration');
+            }}
+          />
+        )}
+
+        {/* Новости - для всех */}
         <SectionCard
           title="Новости"
           icon="newspaper-outline"
@@ -51,6 +60,7 @@ export const SectionsList = () => {
           }}
         />
 
+        {/* Справки - для всех */}
         <SectionCard
           title="Справки"
           icon="receipt-outline"
@@ -59,8 +69,6 @@ export const SectionsList = () => {
             navigation.navigate('Certificates');
           }}
         />
-
-
       </View>
     </View>
   );

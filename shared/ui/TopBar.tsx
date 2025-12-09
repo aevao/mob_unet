@@ -1,5 +1,6 @@
 import { Image, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from './ThemedText';
 import { useThemeStore } from '../../entities/theme/model/themeStore';
@@ -7,11 +8,13 @@ import { useAuthStore } from '../../entities/session/model/authStore';
 import { useStudentTicketStore } from '../../entities/student/model/studentTicketStore';
 
 export const TopBar = () => {
+  const navigation = useNavigation();
   const { theme, toggleTheme } = useThemeStore();
   const { user } = useAuthStore();
   const { ticket } = useStudentTicketStore();
   const insets = useSafeAreaInsets();
   const isDark = theme === 'dark';
+  const canGoBack = navigation.canGoBack();
 
   const avatarUrl = ticket?.photo || user?.avatarUrl || null;
   const alertNumber = user?.alertNumber ?? 0;
@@ -24,6 +27,20 @@ export const TopBar = () => {
       style={{ paddingTop: insets.top, paddingBottom: 12 }}
     >
       <View className="flex-row items-center gap-3">
+        {canGoBack && (
+          <Pressable
+            onPress={() => navigation.goBack()}
+            className={`rounded-full p-2 ${
+              isDark ? 'bg-gray-800' : 'bg-gray-100'
+            }`}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={20}
+              color={isDark ? '#E5E7EB' : '#374151'}
+            />
+          </Pressable>
+        )}
         <ThemedText variant="title" className="text-xl font-bold">
           UNET
         </ThemedText>

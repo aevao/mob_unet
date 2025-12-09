@@ -58,7 +58,7 @@ export const NewsCard = ({ news }: NewsCardProps) => {
           <ThemedText variant="label" className="mb-2 text-xs">
             Прикрепленные файлы:
           </ThemedText>
-          {news.files_news.map((file) => (
+          {news.files_news.map((file,index) => (
             <Pressable
               key={file.id}
               onPress={() => handleFilePress(file.file)}
@@ -72,7 +72,7 @@ export const NewsCard = ({ news }: NewsCardProps) => {
                 color={isDark ? '#60A5FA' : '#2563EB'}
               />
               <ThemedText variant="body" className="ml-2 flex-1 text-sm">
-                {file.file.split('/').pop() || 'Файл'}
+                №{index + 1} Файл
               </ThemedText>
               <Ionicons
                 name="download-outline"

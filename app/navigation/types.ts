@@ -5,6 +5,7 @@ export type RootStackParamList = {
 
 export type AuthStackParamList = {
   Login: undefined;
+  Pin: undefined;
 };
 
 export type HomeStackParamList = {
@@ -14,6 +15,7 @@ export type HomeStackParamList = {
   Applications: undefined;
   News: undefined;
   Certificates: undefined;
+  CertificateDetail: { referenceId: number };
   Registration: undefined;
 };
 
@@ -27,6 +29,10 @@ export type ScheduleStackParamList = {
 
 export type ProfileStackParamList = {
   Profile: undefined;
+};
+
+export type TasksStackParamList = {
+  Tasks: undefined;
 };
 
 

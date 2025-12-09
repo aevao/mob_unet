@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { STORAGE_KEYS } from '../lib/storageKeys';
 import { useAuthStore } from '../../entities/session/model/authStore';
 
@@ -16,10 +17,7 @@ apiClient.interceptors.request.use(async (config) => {
   const token = state.accessToken || (await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN));
 
   if (token) {
-    config.headers = {
-      ...config.headers,
-      Authorization: `Bearer ${token}`,
-    };
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
   return config;
@@ -34,8 +32,9 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       try {
         const state = useAuthStore.getState();
+        // Читаем refreshToken из SecureStore (защищенное хранилище)
         const refreshToken =
-          state.refreshToken || (await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN));
+          state.refreshToken || (await SecureStore.getItemAsync(STORAGE_KEYS.REFRESH_TOKEN));
 
         if (!refreshToken) {
           state.logout();
@@ -45,8 +44,8 @@ apiClient.interceptors.response.use(
         // Предполагаем, что рефреш-токен обновляется по этому эндпоинту.
         // Если у вас другой путь/формат — нужно будет поправить ниже.
         const refreshResponse = await axios.post(
-          '/user/api/v1/users/auth/refresh',
-          { refreshToken },
+          '/user/api/v1/users/refresh/',
+          { refresh: refreshToken },
           { baseURL: API_BASE_URL },
         );
 

@@ -9,7 +9,7 @@ import { Loader } from '../../shared/ui/Loader';
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 export const AppNavigator = () => {
-  const { isInitialized, accessToken, initialize } = useAuthStore();
+  const { isInitialized, accessToken, refreshToken, initialize } = useAuthStore();
 
   useEffect(() => {
     initialize();
@@ -20,10 +20,12 @@ export const AppNavigator = () => {
   }
 
   const isAuthenticated = !!accessToken;
+  // Если есть refreshToken, но нет accessToken - нужно разблокировать доступ через биометрию/PIN
+  const needsUnlock = !!refreshToken && !accessToken;
 
   return (
     <RootStack.Navigator screenOptions={{ headerShown: false }}>
-      {isAuthenticated ? (
+      {isAuthenticated && !needsUnlock ? (
         <RootStack.Screen name="Main" component={MainTabNavigator} />
       ) : (
         <RootStack.Screen name="Auth" component={AuthNavigator} />

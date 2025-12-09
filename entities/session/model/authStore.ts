@@ -1,8 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import axios from 'axios';
 import { create } from 'zustand';
 import { STORAGE_KEYS } from '../../../shared/lib/storageKeys';
 import { apiClient } from '../../../shared/api/client';
 import { decodeUserFromToken } from '../../../shared/lib/decodeUserFromToken';
+
+const API_BASE_URL = 'https://uadmin.kstu.kg';
 
 export type UserRole = 'student' | 'teacher' | 'employee';
 
@@ -30,10 +34,17 @@ interface AuthState {
   isInitialized: boolean;
   isLoading: boolean;
   error: string | null;
+  hasPinCode: boolean;
+  isBiometricEnabled: boolean;
   initialize: () => Promise<void>;
   login: (params: { username: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
   setTokens: (tokens: { accessToken: string; refreshToken?: string }) => Promise<void>;
+  setPinCode: (pin: string) => Promise<void>;
+  verifyPinCode: (pin: string) => Promise<boolean>;
+  clearPinCode: () => Promise<void>;
+  setBiometricEnabled: (enabled: boolean) => Promise<void>;
+  refreshAccessToken: () => Promise<boolean>;
 }
 
 const buildUser = (token?: string | null): User | null => {
@@ -72,17 +83,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isInitialized: false,
   isLoading: false,
   error: null,
+  hasPinCode: false,
+  isBiometricEnabled: false,
 
   initialize: async () => {
     try {
-      const [accessToken, refreshToken] = await Promise.all([
-        AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN),
-        AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN),
-      ]);
+      // Проверяем наличие refreshToken в SecureStore (защищенное хранилище)
+      const refreshToken = await SecureStore.getItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
+      const accessToken = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      const pinCode = await SecureStore.getItemAsync(STORAGE_KEYS.PIN_CODE);
+      const biometricEnabled = await AsyncStorage.getItem(STORAGE_KEYS.BIOMETRIC_ENABLED);
 
       const decodedUser = buildUser(accessToken);
 
-      set({ accessToken, refreshToken, user: decodedUser, isInitialized: true });
+      set({
+        accessToken,
+        refreshToken,
+        user: decodedUser,
+        hasPinCode: !!pinCode,
+        isBiometricEnabled: biometricEnabled === 'true',
+        isInitialized: true,
+      });
     } catch (error) {
       set({ isInitialized: true });
     }
@@ -100,8 +121,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       const { access, refresh } = response.data;
 
-      await get().setTokens({ accessToken: access, refreshToken: refresh });
-      set({ isLoading: false, error: null });
+      // Сохраняем accessToken в AsyncStorage (для быстрого доступа)
+      await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, access);
+      
+      // Сохраняем refreshToken в SecureStore (защищенное хранилище)
+      await SecureStore.setItemAsync(STORAGE_KEYS.REFRESH_TOKEN, refresh);
+
+      const user = buildUser(access);
+      
+      set({ 
+        accessToken: access,
+        refreshToken: refresh,
+        user,
+        isLoading: false, 
+        error: null,
+      });
     } catch (error: any) {
       let message = 'Ошибка авторизации. Попробуйте еще раз.';
       if (error?.response?.data?.message) {
@@ -113,28 +147,88 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    await AsyncStorage.multiRemove([STORAGE_KEYS.ACCESS_TOKEN, STORAGE_KEYS.REFRESH_TOKEN]);
+    await AsyncStorage.multiRemove([
+      STORAGE_KEYS.ACCESS_TOKEN,
+      STORAGE_KEYS.BIOMETRIC_ENABLED,
+    ]);
+    await SecureStore.deleteItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
+    await SecureStore.deleteItemAsync(STORAGE_KEYS.PIN_CODE);
     set({
       accessToken: null,
       refreshToken: null,
       user: null,
       error: null,
+      hasPinCode: false,
+      isBiometricEnabled: false,
     });
   },
 
   setTokens: async ({ accessToken, refreshToken }) => {
-    const updates: Partial<AuthState> = { accessToken };
-    const storageOps: [string, string][] = [[STORAGE_KEYS.ACCESS_TOKEN, accessToken]];
+    // Сохраняем accessToken в AsyncStorage
+    await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
 
+    // Сохраняем refreshToken в SecureStore (защищенное хранилище)
     if (refreshToken) {
-      updates.refreshToken = refreshToken;
-      storageOps.push([STORAGE_KEYS.REFRESH_TOKEN, refreshToken]);
+      await SecureStore.setItemAsync(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
     }
 
-    await AsyncStorage.multiSet(storageOps);
     const user = buildUser(accessToken);
-    set({ ...updates, user });
+    set({ 
+      accessToken, 
+      refreshToken: refreshToken || null, 
+      user 
+    });
   },
+
+  setPinCode: async (pin: string) => {
+    await SecureStore.setItemAsync(STORAGE_KEYS.PIN_CODE, pin);
+    set({ hasPinCode: true });
+  },
+
+  verifyPinCode: async (pin: string): Promise<boolean> => {
+    try {
+      const storedPin = await SecureStore.getItemAsync(STORAGE_KEYS.PIN_CODE);
+      return storedPin === pin;
+    } catch {
+      return false;
+    }
+  },
+
+  clearPinCode: async () => {
+    await SecureStore.deleteItemAsync(STORAGE_KEYS.PIN_CODE);
+    await AsyncStorage.removeItem(STORAGE_KEYS.BIOMETRIC_ENABLED);
+    set({ hasPinCode: false, isBiometricEnabled: false });
+  },
+
+  setBiometricEnabled: async (enabled: boolean) => {
+    await AsyncStorage.setItem(STORAGE_KEYS.BIOMETRIC_ENABLED, enabled ? 'true' : 'false');
+    set({ isBiometricEnabled: enabled });
+  },
+
+  refreshAccessToken: async (): Promise<boolean> => {
+    try {
+      // Читаем refreshToken из SecureStore
+      const refreshToken = await SecureStore.getItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
+
+      if (!refreshToken) {
+        return false;
+      }
+
+      // Используем axios напрямую, чтобы избежать циклических зависимостей
+      const response = await axios.post(
+        `${API_BASE_URL}/user/api/v1/users/refresh/`,
+        { refresh: refreshToken },
+      );
+
+      const { access, refresh } = response.data;
+      await get().setTokens({ accessToken: access, refreshToken: refresh });
+      return true;
+    } catch (error) {
+      console.error('Failed to refresh token:', error);
+      return false;
+    }
+  },
+
 }));
 
 

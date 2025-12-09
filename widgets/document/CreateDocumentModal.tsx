@@ -343,6 +343,7 @@ export const CreateDocumentModal = ({
                   <AppButton
                     title="Выбрать файлы"
                     variant="outline"
+                    className='mb-2'
                     onPress={handlePickFiles}
                   />
                   {formData.files.length > 0 && (
