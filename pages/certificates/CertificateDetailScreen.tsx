@@ -4,6 +4,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
+import { downloadAsync } from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import type { RouteProp } from '@react-navigation/native';
 import { ScreenContainer } from '../../shared/ui/ScreenContainer';
@@ -65,9 +66,9 @@ export const CertificateDetailScreen = () => {
 
     setIsDownloading(true);
     try {
-      const fileUri = `${FileSystem.documentDirectory}${certificate.service_name.replace(/\s+/g, '_')}.pdf`;
+      const fileUri = `${FileSystem.Paths.cache.uri}${certificate.service_name.replace(/\s+/g, '_')}.pdf`;
 
-      const downloadResult = await FileSystem.downloadAsync(certificate.file, fileUri);
+      const downloadResult = await downloadAsync(certificate.file, fileUri);
 
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(downloadResult.uri);

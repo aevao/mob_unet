@@ -13,6 +13,7 @@ import { GradesScreen } from '../../pages/grades/GradesScreen';
 import { ScheduleScreen } from '../../pages/schedule/ScheduleScreen';
 import { ProfileScreen } from '../../pages/profile/ProfileScreen';
 import { TasksScreen } from '../../pages/tasks/TasksScreen';
+import { TaskDetailScreen } from '../../pages/tasks/TaskDetailScreen';
 import { DocumentsScreen } from '../../pages/documents/DocumentsScreen';
 import { DocumentDetailScreen } from '../../pages/documents/DocumentDetailScreen';
 import { ApplicationsScreen } from '../../pages/applications/ApplicationsScreen';
@@ -141,6 +142,11 @@ const TasksStackNavigator = () => (
       name="Tasks"
       component={TasksScreen}
       options={{ title: 'Задачи' }}
+    />
+    <TasksStack.Screen
+      name="TaskDetail"
+      component={TaskDetailScreen}
+      options={{ title: 'Детали задачи' }}
     />
   </TasksStack.Navigator>
 );
