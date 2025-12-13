@@ -52,19 +52,19 @@ const CategorySection = ({ category, tasks, isExpanded, onToggle, isDark }: Cate
           </ThemedText>
           <View
             className={`ml-2 rounded-full px-2 py-0.5 ${
-              isDark ? 'bg-gray-700' : 'bg-gray-200'
+              isDark ? 'bg-blue-900/30' : 'bg-blue-50'
             }`}
           >
-            <ThemedText variant="label" className="text-xs">
+            <ThemedText variant="label" className={`text-xs ${isDark ? 'text-[#60A5FA]' : 'text-[#2563EB]'}`}>
               {tasks.length}
             </ThemedText>
           </View>
         </View>
-        <Pressable className="px-3 bg-gray-500 rounded-full" onPress={onToggle}>
+        <Pressable className={`p-2 rounded-full ${isDark ? 'bg-blue-900/30' : 'bg-blue-50'}`} onPress={onToggle}>
           <Ionicons
             name={isExpanded ? 'chevron-up' : 'chevron-down'}
             size={20}
-            color={isDark ? '#9CA3AF' : '#6B7280'}
+            color={isDark ? '#60A5FA' : '#2563EB'}
           />
         </Pressable>
       </View>

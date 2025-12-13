@@ -194,7 +194,7 @@ export const MainTabNavigator = () => {
         />
       )}
       {/* Расписание - только для студентов */}
-      {isSectionVisible(userRole, ['student']) && (
+      {isSectionVisible(userRole, ['all']) && (
         <Tab.Screen
           name="ScheduleTab"
           component={ScheduleStackNavigator}
