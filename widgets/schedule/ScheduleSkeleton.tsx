@@ -12,7 +12,7 @@ export const ScheduleSkeleton = () => {
         <ThemedCard key={i} className="p-3">
           <View className="flex-row items-start">
             <View
-              className={`h-12 w-12 rounded-md ${
+              className={`h-12 w-12 rounded-md mr-2 ${
                 isDark ? 'bg-gray-800' : 'bg-gray-200'
               }`}
             />

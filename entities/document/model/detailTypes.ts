@@ -1,5 +1,27 @@
 import type { Employee } from './types';
 
+export interface ApplicationMember {
+  id: number;
+  application: number;
+  type_approval: number;
+  name_approval: string;
+  is_online: boolean;
+  user: number;
+  member: number;
+  name: string;
+  image: string;
+  position: string;
+  member_check: string | null;
+  date_check_member: string | null;
+  status: string;
+  member_queue: number;
+  member_refusal: string | null;
+  repeat_comment: string | null;
+  turn: boolean;
+  sign: string | null;
+  short_name: string | null;
+}
+
 export interface DocumentDetail {
   id: number;
   employee: Employee;
@@ -33,7 +55,7 @@ export interface DocumentDetail {
   agreement_comment: string | null;
   file: string;
   files: string[];
-  applicationmember: any[];
+  applicationmember: ApplicationMember[];
   application_status: Array<{
     id: number;
     status: boolean;

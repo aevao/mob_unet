@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, ScrollView, Pressable, Image, Linking } from 'react-native';
+import { View, ActivityIndicator, ScrollView, Pressable, Linking } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import type { RouteProp } from '@react-navigation/native';
@@ -10,6 +10,7 @@ import { useThemeStore } from '../../entities/theme/model/themeStore';
 import { fetchTaskDetail } from '../../entities/task/api/taskApi';
 import type { TaskDetail, TaskMember, TaskFile } from '../../entities/task/model/types';
 import type { TasksStackParamList } from '../../app/navigation/types';
+import { OptimizedImage } from '../../shared/ui/OptimizedImage';
 
 type TaskDetailScreenRouteProp = RouteProp<TasksStackParamList, 'TaskDetail'>;
 
@@ -47,24 +48,13 @@ const MemberCard = ({ member, isDark }: { member: TaskMember; isDark: boolean })
       }`}
     >
       <View className="mr-3 h-10 w-10 overflow-hidden rounded-full">
-        {member.member.imeag ? (
-          <Image
-            source={{ uri: member.member.imeag }}
-            className="h-full w-full"
-            resizeMode="cover"
-          />
-        ) : (
-          <View
-            className="h-full w-full items-center justify-center"
-            style={{ backgroundColor: isDark ? '#374151' : '#E5E7EB' }}
-          >
-            <Ionicons
-              name="person"
-              size={20}
-              color={isDark ? '#9CA3AF' : '#6B7280'}
-            />
-          </View>
-        )}
+        <OptimizedImage
+          uri={member.member.imeag}
+          style={{ width: 40, height: 40 }}
+          resizeMode="cover"
+          fallbackIcon="person"
+          showLoadingIndicator={false}
+        />
       </View>
       <View className="flex-1">
         <ThemedText variant="body" className="text-sm font-semibold">
@@ -295,24 +285,13 @@ export const TaskDetailScreen = () => {
           </ThemedText>
           <View className="flex-row items-center">
             <View className="mr-3 h-12 w-12 overflow-hidden rounded-full">
-              {task.creator.imeag ? (
-                <Image
-                  source={{ uri: task.creator.imeag }}
-                  className="h-full w-full"
-                  resizeMode="cover"
-                />
-              ) : (
-                <View
-                  className="h-full w-full items-center justify-center"
-                  style={{ backgroundColor: isDark ? '#374151' : '#E5E7EB' }}
-                >
-                  <Ionicons
-                    name="person"
-                    size={24}
-                    color={isDark ? '#9CA3AF' : '#6B7280'}
-                  />
-                </View>
-              )}
+              <OptimizedImage
+                uri={task.creator.imeag}
+                style={{ width: 48, height: 48 }}
+                resizeMode="cover"
+                fallbackIcon="person"
+                showLoadingIndicator={false}
+              />
             </View>
             <View className="flex-1">
               <ThemedText variant="body" className="text-sm font-semibold">
@@ -536,76 +515,7 @@ export const TaskDetailScreen = () => {
           </ThemedCard>
         )}
 
-        {/* Task Settings */}
-        <ThemedCard className="mb-4 p-4">
-          <ThemedText variant="title" className="mb-3 text-base font-bold">
-            Настройки задачи
-          </ThemedText>
-          <View className="space-y-2">
-            <View className="flex-row items-center justify-between">
-              <ThemedText variant="body" className="text-sm">
-                Разрешить изменение срока
-              </ThemedText>
-              <Ionicons
-                name={task.allow_change_deadline ? 'checkmark-circle' : 'close-circle-outline'}
-                size={20}
-                color={task.allow_change_deadline ? (isDark ? '#10B981' : '#059669') : (isDark ? '#6B7280' : '#9CA3AF')}
-              />
-            </View>
-            <View className="flex-row items-center justify-between">
-              <ThemedText variant="body" className="text-sm">
-                Пропускать выходные дни
-              </ThemedText>
-              <Ionicons
-                name={task.skip_dayoffs ? 'checkmark-circle' : 'close-circle-outline'}
-                size={20}
-                color={task.skip_dayoffs ? (isDark ? '#10B981' : '#059669') : (isDark ? '#6B7280' : '#9CA3AF')}
-              />
-            </View>
-            <View className="flex-row items-center justify-between">
-              <ThemedText variant="body" className="text-sm">
-                Проверка после завершения
-              </ThemedText>
-              <Ionicons
-                name={task.check_after_finish ? 'checkmark-circle' : 'close-circle-outline'}
-                size={20}
-                color={task.check_after_finish ? (isDark ? '#10B981' : '#059669') : (isDark ? '#6B7280' : '#9CA3AF')}
-              />
-            </View>
-            <View className="flex-row items-center justify-between">
-              <ThemedText variant="body" className="text-sm">
-                Определять по подзадачам
-              </ThemedText>
-              <Ionicons
-                name={task.determ_by_subtasks ? 'checkmark-circle' : 'close-circle-outline'}
-                size={20}
-                color={task.determ_by_subtasks ? (isDark ? '#10B981' : '#059669') : (isDark ? '#6B7280' : '#9CA3AF')}
-              />
-            </View>
-            <View className="flex-row items-center justify-between">
-              <ThemedText variant="body" className="text-sm">
-                Отчет после завершения
-              </ThemedText>
-              <Ionicons
-                name={task.report_after_finish ? 'checkmark-circle' : 'close-circle-outline'}
-                size={20}
-                color={task.report_after_finish ? (isDark ? '#10B981' : '#059669') : (isDark ? '#6B7280' : '#9CA3AF')}
-              />
-            </View>
-            {task.is_archived && (
-              <View className="flex-row items-center justify-between">
-                <ThemedText variant="body" className="text-sm">
-                  Архивирована
-                </ThemedText>
-                <Ionicons
-                  name="archive"
-                  size={20}
-                  color={isDark ? '#6B7280' : '#9CA3AF'}
-                />
-              </View>
-            )}
-          </View>
-        </ThemedCard>
+       
       </ScrollView>
     </ScreenContainer>
   );

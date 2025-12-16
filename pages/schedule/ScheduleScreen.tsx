@@ -9,8 +9,20 @@ import { ScheduleSkeleton } from '../../widgets/schedule/ScheduleSkeleton';
 import { useScheduleStore } from '../../entities/schedule/model/scheduleStore';
 import { DAY_LABELS, type DayOfWeek } from '../../entities/schedule/model/types';
 
+// Функция для определения текущего дня недели
+const getCurrentDayOfWeek = (): DayOfWeek => {
+  const today = new Date().getDay(); // 0 = воскресенье, 1 = понедельник, ..., 6 = суббота
+  
+  // Преобразуем в формат, где понедельник = 0
+  // Если воскресенье (0), выбираем понедельник
+  const dayIndex = today === 0 ? 0 : today - 1;
+  
+  const days: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  return days[dayIndex] || 'monday'; // fallback на понедельник
+};
+
 export const ScheduleScreen = () => {
-  const [selectedDay, setSelectedDay] = useState<DayOfWeek>('monday');
+  const [selectedDay, setSelectedDay] = useState<DayOfWeek>(getCurrentDayOfWeek());
   const { schedule, isLoading, error, fetchSchedule } = useScheduleStore();
 
   useEffect(() => {

@@ -69,6 +69,16 @@ export const SectionsList = () => {
             navigation.navigate('Certificates');
           }}
         />
+
+        {/* Личная карточка - для всех */}
+        <SectionCard
+          title="Личная карточка"
+          icon="person-circle-outline"
+          description="Персональные данные и научная деятельность"
+          onPress={() => {
+            navigation.navigate('PersonalCard');
+          }}
+        />
       </View>
     </View>
   );

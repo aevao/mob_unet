@@ -1,9 +1,10 @@
-import { Image, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedCard } from '../../shared/ui/ThemedCard';
 import { ThemedText } from '../../shared/ui/ThemedText';
 import { useThemeStore } from '../../entities/theme/model/themeStore';
 import type { StudentTicket } from '../../entities/student/model/studentTicketStore';
+import { OptimizedImage } from '../../shared/ui/OptimizedImage';
 
 interface StudentTicketCardProps {
   ticket: StudentTicket | null;
@@ -68,25 +69,14 @@ export const StudentTicketCard = ({
       </ThemedText>
 
       <View className="mt-4 flex-row">
-        {avatarUrl ? (
-          <Image
-            source={{ uri: avatarUrl }}
-            className="h-24 w-20 rounded-xl bg-white"
-            resizeMode="cover"
-          />
-        ) : (
-          <View
-            className={`h-24 w-20 items-center justify-center rounded-xl ${
-              isDark ? 'bg-gray-800' : 'bg-gray-100'
-            }`}
-          >
-            <Ionicons
-              name="person"
-              size={32}
-              color={isDark ? '#9CA3AF' : '#6B7280'}
-            />
-          </View>
-        )}
+        <OptimizedImage
+          uri={avatarUrl}
+          style={{ width: 80, height: 96, borderRadius: 12 }}
+          className="rounded-xl bg-white"
+          resizeMode="cover"
+          fallbackIcon="person"
+          showLoadingIndicator={false}
+        />
 
         <View className="ml-4 flex-1">
           <ThemedText variant="label" className="text-[11px] uppercase">

@@ -1,9 +1,12 @@
-import { Image, View } from 'react-native';
+import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedCard } from '../../shared/ui/ThemedCard';
 import { ThemedText } from '../../shared/ui/ThemedText';
 import { useThemeStore } from '../../entities/theme/model/themeStore';
+import { useAuthStore } from '../../entities/session/model/authStore';
 import type { User } from '../../entities/session/model/authStore';
+import { OptimizedImage } from '../../shared/ui/OptimizedImage';
+import { getUserAvatarSync } from '../../shared/lib/getUserAvatar';
 
 interface EmployeeCardProps {
   user: User | null;
@@ -11,13 +14,14 @@ interface EmployeeCardProps {
 
 export const EmployeeCard = ({ user }: EmployeeCardProps) => {
   const { theme } = useThemeStore();
+  const { storedAvatarUrl } = useAuthStore();
   const isDark = theme === 'dark';
 
   const fullName = user?.surname && user?.firstName && user?.lastName
     ? `${user.surname} ${user.firstName} ${user.lastName}`
     : user?.name || 'Нет данных';
 
-  const avatarUrl = user?.avatarUrl || null;
+  const avatarUrl = getUserAvatarSync(user?.avatarUrl, null, storedAvatarUrl);
   
   // Пытаемся получить division и position из raw данных
   // Если их нет в токене, можно будет добавить отдельный API запрос
@@ -54,25 +58,14 @@ export const EmployeeCard = ({ user }: EmployeeCardProps) => {
       </ThemedText>
 
       <View className="mt-4 flex-row">
-        {avatarUrl ? (
-          <Image
-            source={{ uri: avatarUrl }}
-            className="h-24 w-20 rounded-xl bg-white"
-            resizeMode="cover"
-          />
-        ) : (
-          <View
-            className={`h-24 w-20 items-center justify-center rounded-xl ${
-              isDark ? 'bg-gray-800' : 'bg-gray-100'
-            }`}
-          >
-            <Ionicons
-              name="person"
-              size={32}
-              color={isDark ? '#9CA3AF' : '#6B7280'}
-            />
-          </View>
-        )}
+        <OptimizedImage
+          uri={avatarUrl}
+          style={{ width: 80, height: 96, borderRadius: 12 }}
+          className="rounded-xl bg-white"
+          resizeMode="cover"
+          fallbackIcon="person"
+          showLoadingIndicator={false}
+        />
 
         <View className="ml-4 flex-1">
           <ThemedText variant="label" className="text-[11px] uppercase">

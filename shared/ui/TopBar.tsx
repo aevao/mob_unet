@@ -1,4 +1,4 @@
-import { Image, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,17 +6,19 @@ import { ThemedText } from './ThemedText';
 import { useThemeStore } from '../../entities/theme/model/themeStore';
 import { useAuthStore } from '../../entities/session/model/authStore';
 import { useStudentTicketStore } from '../../entities/student/model/studentTicketStore';
+import { OptimizedImage } from './OptimizedImage';
+import { getUserAvatarSync } from '../../shared/lib/getUserAvatar';
 
 export const TopBar = () => {
   const navigation = useNavigation();
   const { theme, toggleTheme } = useThemeStore();
-  const { user } = useAuthStore();
+  const { user, storedAvatarUrl } = useAuthStore();
   const { ticket } = useStudentTicketStore();
   const insets = useSafeAreaInsets();
   const isDark = theme === 'dark';
   const canGoBack = navigation.canGoBack();
 
-  const avatarUrl = ticket?.photo || user?.avatarUrl || null;
+  const avatarUrl = getUserAvatarSync(user?.avatarUrl, ticket?.photo, storedAvatarUrl);
   const alertNumber = user?.alertNumber ?? 0;
 
   return (
@@ -83,7 +85,13 @@ export const TopBar = () => {
           }`}
         >
           {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} className="h-full w-full" resizeMode="cover" />
+            <OptimizedImage
+              uri={avatarUrl}
+              style={{ width: 40, height: 40 }}
+              resizeMode="cover"
+              fallbackIcon="person"
+              showLoadingIndicator={false}
+            />
           ) : (
             <ThemedText variant="body" className="text-center text-xs leading-10">
               UNET

@@ -1,4 +1,4 @@
-import { Alert, Image, Pressable, View } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer } from '../../shared/ui/ScreenContainer';
 import { AppScrollView } from '../../shared/ui/AppScrollView';
@@ -8,9 +8,11 @@ import { ThemedText } from '../../shared/ui/ThemedText';
 import { ThemedCard } from '../../shared/ui/ThemedCard';
 import { useStudentTicketStore } from '../../entities/student/model/studentTicketStore';
 import { useThemeStore } from '../../entities/theme/model/themeStore';
+import { OptimizedImage } from '../../shared/ui/OptimizedImage';
+import { getUserAvatarSync } from '../../shared/lib/getUserAvatar';
 
 export const ProfileScreen = () => {
-  const { user, logout } = useAuthStore();
+  const { user, logout, storedAvatarUrl } = useAuthStore();
   const { ticket } = useStudentTicketStore();
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
@@ -19,7 +21,7 @@ export const ProfileScreen = () => {
     ? `${user.surname} ${user.firstName} ${user.lastName}`
     : user?.name || '—';
 
-  const avatarUrl = ticket?.photo || user?.avatarUrl || null;
+  const avatarUrl = getUserAvatarSync(user?.avatarUrl, ticket?.photo, storedAvatarUrl);
 
   const roleLabel =
     user?.role === 'teacher'
@@ -57,21 +59,13 @@ export const ProfileScreen = () => {
                 isDark ? 'border-gray-700' : 'border-gray-200'
               }`}
             >
-              {avatarUrl ? (
-                <Image source={{ uri: avatarUrl }} className="h-full w-full" resizeMode="cover" />
-              ) : (
-                <View
-                  className={`h-full w-full items-center justify-center ${
-                    isDark ? 'bg-gray-800' : 'bg-gray-100'
-                  }`}
-                >
-                  <Ionicons
-                    name="person"
-                    size={40}
-                    color={isDark ? '#9CA3AF' : '#6B7280'}
-                  />
-                </View>
-              )}
+              <OptimizedImage
+                uri={avatarUrl}
+                style={{ width: 96, height: 96 }}
+                resizeMode="cover"
+                fallbackIcon="person"
+                showLoadingIndicator={false}
+              />
             </View>
 
             <ThemedText variant="title" className="mt-4 text-xl font-bold">

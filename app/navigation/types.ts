@@ -17,6 +17,9 @@ export type HomeStackParamList = {
   Certificates: undefined;
   CertificateDetail: { referenceId: number };
   Registration: undefined;
+  PersonalCard: undefined;
+  PersonalData: undefined;
+  ScientificActivity: undefined;
 };
 
 export type GradesStackParamList = {

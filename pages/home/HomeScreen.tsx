@@ -10,11 +10,12 @@ import { StudentTicketCard } from '../../widgets/home/StudentTicketCard';
 import { EmployeeCard } from '../../widgets/home/EmployeeCard';
 import { SectionsList } from '../../widgets/home/SectionsList';
 import { QrCodeModal } from '../../widgets/home/QrCodeModal';
+import { getUserAvatarSync } from '../../shared/lib/getUserAvatar';
 
 export const HomeScreen = () => {
   const [qrVisible, setQrVisible] = useState(false);
   const { ticket, error, fetchTicket } = useStudentTicketStore();
-  const { user } = useAuthStore();
+  const { user, storedAvatarUrl } = useAuthStore();
 
   useEffect(() => {
     // Загружаем данные студенческого только для студентов
@@ -27,7 +28,7 @@ export const HomeScreen = () => {
   const fullName = ticket
     ? `${ticket.surname} ${ticket.first_name} ${ticket.last_name}`
     : user?.name || 'Нет данных';
-  const avatarUrl = ticket?.photo || user?.avatarUrl || null;
+  const avatarUrl = getUserAvatarSync(user?.avatarUrl, ticket?.photo, storedAvatarUrl);
 
   // Студенческий билет показываем только студентам
   const showStudentTicket = isSectionVisible(user?.role, ['student']);

@@ -11,6 +11,8 @@ import { useAuthStore } from '../../entities/session/model/authStore';
 import { useThemeStore } from '../../entities/theme/model/themeStore';
 import type { TaskCategory, Task } from '../../entities/task/model/types';
 import { ThemedCard } from '../../shared/ui/ThemedCard';
+import { CreateTaskModal } from '../../widgets/task/CreateTaskModal';
+import { AppButton } from '../../shared/ui/AppButton';
 
 const categoryLabels: Record<TaskCategory, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
   OVERDUE: { label: 'Просроченные', icon: 'alert-circle', color: '#EF4444' },
@@ -89,12 +91,19 @@ export const TasksScreen = () => {
   const [expandedCategories, setExpandedCategories] = useState<Set<TaskCategory>>(
     new Set(['OVERDUE', 'TODAY'])
   );
+  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
       void fetchTasks(user.id);
     }
   }, [user?.id, fetchTasks]);
+
+  const handleTaskCreated = () => {
+    if (user?.id) {
+      void fetchTasks(user.id);
+    }
+  };
 
   const toggleCategory = (category: TaskCategory) => {
     setExpandedCategories((prev) => {
@@ -118,10 +127,25 @@ export const TasksScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 20 }}
       >
-        <View className=" pt-3">
-          <ThemedText variant="title" className="mb-4 text-xl font-bold">
-            Задачи
-          </ThemedText>
+        <View className="pt-3">
+          <View className="mb-4 flex-row items-center justify-between">
+            <ThemedText variant="title" className="text-xl font-bold">
+              Задачи
+            </ThemedText>
+            <Pressable
+              onPress={() => setIsCreateModalVisible(true)}
+              className={`h-10 w-10 items-center justify-center rounded-full ${
+                isDark ? 'bg-blue-900/30' : 'bg-blue-50'
+              }`}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name="add"
+                size={24}
+                color={isDark ? '#60A5FA' : '#2563EB'}
+              />
+            </Pressable>
+          </View>
 
           {isLoading ? (
             <TaskSkeleton />
@@ -158,6 +182,12 @@ export const TasksScreen = () => {
           )}
         </View>
       </AppScrollView>
+
+      <CreateTaskModal
+        visible={isCreateModalVisible}
+        onClose={() => setIsCreateModalVisible(false)}
+        onSuccess={handleTaskCreated}
+      />
     </ScreenContainer>
   );
 };

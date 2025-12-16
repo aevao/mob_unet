@@ -170,7 +170,7 @@ export const CustomDropdown = ({
         color: isDark ? '#9CA3AF' : '#6B7280',
         fontSize: 14,
       }}
-      ListEmptyComponent={
+      ListEmptyComponent={() =>
         loading ? (
           <View className="py-8 items-center">
             <ActivityIndicator size="large" color={isDark ? '#60A5FA' : '#2563EB'} />

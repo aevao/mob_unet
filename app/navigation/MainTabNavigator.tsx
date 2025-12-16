@@ -21,6 +21,9 @@ import { NewsScreen } from '../../pages/news/NewsScreen';
 import { CertificatesScreen } from '../../pages/certificates/CertificatesScreen';
 import { CertificateDetailScreen } from '../../pages/certificates/CertificateDetailScreen';
 import { RegistrationScreen } from '../../pages/registration/RegistrationScreen';
+import { PersonalCardScreen } from '../../pages/personalCard/PersonalCardScreen';
+import { PersonalDataScreen } from '../../pages/personalCard/PersonalDataScreen';
+import { ScientificActivityScreen } from '../../pages/personalCard/ScientificActivityScreen';
 import { TopBar } from '../../shared/ui/TopBar';
 import { isSectionVisible } from '../../shared/lib/roleUtils';
 import { useAuthStore } from '../../entities/session/model/authStore';
@@ -85,6 +88,21 @@ const HomeStackNavigator = () => {
         name="CertificateDetail"
         component={CertificateDetailScreen}
         options={{ title: 'Детали справки' }}
+      />
+      <HomeStack.Screen
+        name="PersonalCard"
+        component={PersonalCardScreen}
+        options={{ title: 'Личная карточка' }}
+      />
+      <HomeStack.Screen
+        name="PersonalData"
+        component={PersonalDataScreen}
+        options={{ title: 'Персональные данные' }}
+      />
+      <HomeStack.Screen
+        name="ScientificActivity"
+        component={ScientificActivityScreen}
+        options={{ title: 'Научная деятельность' }}
       />
     </HomeStack.Navigator>
   );

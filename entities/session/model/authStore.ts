@@ -80,6 +80,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   accessToken: null,
   refreshToken: null,
   user: null,
+  storedAvatarUrl: null,
   isInitialized: false,
   isLoading: false,
   error: null,
@@ -93,6 +94,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const accessToken = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       const pinCode = await SecureStore.getItemAsync(STORAGE_KEYS.PIN_CODE);
       const biometricEnabled = await AsyncStorage.getItem(STORAGE_KEYS.BIOMETRIC_ENABLED);
+      const storedAvatarUrl = await AsyncStorage.getItem(STORAGE_KEYS.USER_AVATAR_URL);
 
       const decodedUser = buildUser(accessToken);
 
@@ -100,6 +102,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         accessToken,
         refreshToken,
         user: decodedUser,
+        storedAvatarUrl,
         hasPinCode: !!pinCode,
         isBiometricEnabled: biometricEnabled === 'true',
         isInitialized: true,
@@ -129,10 +132,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       const user = buildUser(access);
       
+      // Сохраняем фото пользователя в локальное хранилище
+      if (user?.avatarUrl) {
+        await AsyncStorage.setItem(STORAGE_KEYS.USER_AVATAR_URL, user.avatarUrl);
+      }
+      
       set({ 
         accessToken: access,
         refreshToken: refresh,
         user,
+        storedAvatarUrl: user?.avatarUrl || null,
         isLoading: false, 
         error: null,
       });
@@ -150,6 +159,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await AsyncStorage.multiRemove([
       STORAGE_KEYS.ACCESS_TOKEN,
       STORAGE_KEYS.BIOMETRIC_ENABLED,
+      STORAGE_KEYS.USER_AVATAR_URL,
     ]);
     await SecureStore.deleteItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
     await SecureStore.deleteItemAsync(STORAGE_KEYS.PIN_CODE);
@@ -157,6 +167,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       accessToken: null,
       refreshToken: null,
       user: null,
+      storedAvatarUrl: null,
       error: null,
       hasPinCode: false,
       isBiometricEnabled: false,
@@ -173,10 +184,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     const user = buildUser(accessToken);
+    
+    // Обновляем фото пользователя в локальном хранилище, если оно изменилось
+    let finalStoredAvatarUrl = user?.avatarUrl || null;
+    if (user?.avatarUrl) {
+      const storedAvatarUrl = await AsyncStorage.getItem(STORAGE_KEYS.USER_AVATAR_URL);
+      if (storedAvatarUrl !== user.avatarUrl) {
+        await AsyncStorage.setItem(STORAGE_KEYS.USER_AVATAR_URL, user.avatarUrl);
+        finalStoredAvatarUrl = user.avatarUrl;
+      } else {
+        finalStoredAvatarUrl = storedAvatarUrl;
+      }
+    }
+    
     set({ 
       accessToken, 
       refreshToken: refreshToken || null, 
-      user 
+      user,
+      storedAvatarUrl: finalStoredAvatarUrl,
     });
   },
 
