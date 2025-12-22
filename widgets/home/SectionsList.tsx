@@ -79,6 +79,16 @@ export const SectionsList = () => {
             navigation.navigate('PersonalCard');
           }}
         />
+
+        {/* Табель - для всех */}
+        <SectionCard
+          title="Табель"
+          icon="calendar-outline"
+          description="Отметка посещаемости"
+          onPress={() => {
+            navigation.navigate('Tab');
+          }}
+        />
       </View>
     </View>
   );

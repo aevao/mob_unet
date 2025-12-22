@@ -24,6 +24,7 @@ import { RegistrationScreen } from '../../pages/registration/RegistrationScreen'
 import { PersonalCardScreen } from '../../pages/personalCard/PersonalCardScreen';
 import { PersonalDataScreen } from '../../pages/personalCard/PersonalDataScreen';
 import { ScientificActivityScreen } from '../../pages/personalCard/ScientificActivityScreen';
+import { TabScreen } from '../../pages/attendance/TabScreen';
 import { TopBar } from '../../shared/ui/TopBar';
 import { isSectionVisible } from '../../shared/lib/roleUtils';
 import { useAuthStore } from '../../entities/session/model/authStore';
@@ -103,6 +104,11 @@ const HomeStackNavigator = () => {
         name="ScientificActivity"
         component={ScientificActivityScreen}
         options={{ title: 'Научная деятельность' }}
+      />
+      <HomeStack.Screen
+        name="Tab"
+        component={TabScreen}
+        options={{ title: 'Табель' }}
       />
     </HomeStack.Navigator>
   );

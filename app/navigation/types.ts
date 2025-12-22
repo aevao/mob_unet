@@ -20,6 +20,7 @@ export type HomeStackParamList = {
   PersonalCard: undefined;
   PersonalData: undefined;
   ScientificActivity: undefined;
+  Tab: undefined;
 };
 
 export type GradesStackParamList = {
