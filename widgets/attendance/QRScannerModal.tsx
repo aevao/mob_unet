@@ -1,14 +1,30 @@
-import { useState, useEffect } from 'react';
-import { Modal, View, Pressable, Alert, StyleSheet, Dimensions } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { Modal, View, Pressable, Alert, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '../../shared/ui/ThemedText';
 import { useThemeStore } from '../../entities/theme/model/themeStore';
 
+export interface ScanData {
+  qrCode: string;
+  campus: string;
+  corpus: string;
+  room: string;
+  latitude: number;
+  longitude: number;
+  photo: {
+    uri: string;
+    type: string;
+    name: string;
+  };
+}
+
 interface QRScannerModalProps {
   visible: boolean;
   onClose: () => void;
-  onScan: (qrCode: string) => void;
+  onScan: (scanData: ScanData) => void;
 }
 
 const { width, height } = Dimensions.get('window');
@@ -18,18 +34,82 @@ export const QRScannerModal = ({ visible, onClose, onScan }: QRScannerModalProps
   const isDark = theme === 'dark';
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const cameraRef = useRef<CameraView>(null);
 
   useEffect(() => {
     if (visible) {
       setScanned(false);
+      setIsProcessing(false);
     }
   }, [visible]);
 
-  const handleBarCodeScanned = ({ data }: { data: string }) => {
-    if (scanned) return;
+  const handleBarCodeScanned = async ({ data }: { data: string }) => {
+    if (scanned || isProcessing) return;
 
     setScanned(true);
-    onScan(data);
+    setIsProcessing(true);
+
+    try {
+      // Парсим QR-код (предполагаем JSON формат)
+      let qrData: any;
+      try {
+        qrData = JSON.parse(data);
+      } catch {
+        // Если не JSON, используем как строку
+        qrData = { qrCode: data };
+      }
+
+      // Получаем геолокацию
+      const locationPermission = await Location.requestForegroundPermissionsAsync();
+      if (!locationPermission.granted) {
+        Alert.alert(
+          'Доступ к геолокации',
+          'Для отметки необходим доступ к геолокации. Пожалуйста, разрешите доступ в настройках приложения.',
+        );
+        setIsProcessing(false);
+        setScanned(false);
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      // Формируем данные для отправки без фото
+      const scanData: ScanData = {
+        qrCode: data,
+        campus: qrData.campus || qrData.campus_name || '',
+        corpus: qrData.corpus || qrData.corpus_name || '',
+        room: qrData.room || qrData.room_name || '',
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        photo: {
+          uri: '', // Фото не требуется при начале работы
+          type: 'image/jpeg',
+          name: '',
+        },
+      };
+
+      // Закрываем модальное окно перед вызовом onScan
+      onClose();
+      onScan(scanData);
+    } catch (error: any) {
+      console.error('Error processing scan:', error);
+      Alert.alert(
+        'Ошибка',
+        error.message || 'Не удалось обработать QR-код. Попробуйте снова.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setIsProcessing(false);
+              setScanned(false);
+            },
+          },
+        ],
+      );
+    }
   };
 
   const handleRequestPermission = async () => {
@@ -103,9 +183,10 @@ export const QRScannerModal = ({ visible, onClose, onScan }: QRScannerModalProps
       >
         <View style={styles.cameraContainer}>
           <CameraView
+            ref={cameraRef}
             style={styles.camera}
             facing="back"
-            onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+            onBarcodeScanned={scanned || isProcessing ? undefined : handleBarCodeScanned}
             barcodeScannerSettings={{
               barcodeTypes: ['qr'],
             }}
@@ -129,9 +210,18 @@ export const QRScannerModal = ({ visible, onClose, onScan }: QRScannerModalProps
 
           {/* Инструкция */}
           <View style={styles.instructionContainer}>
-            <ThemedText variant="body" className="text-center text-base font-semibold text-white">
-              Наведите камеру на QR-код
-            </ThemedText>
+            {isProcessing ? (
+              <View className="items-center">
+                <ActivityIndicator size="large" color="#FFFFFF" />
+                <ThemedText variant="body" className="mt-2 text-center text-base font-semibold text-white">
+                  Обработка...
+                </ThemedText>
+              </View>
+            ) : (
+              <ThemedText variant="body" className="text-center text-base font-semibold text-white">
+                Наведите камеру на QR-код
+              </ThemedText>
+            )}
           </View>
         </View>
       </View>

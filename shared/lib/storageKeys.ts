@@ -4,6 +4,7 @@ export const STORAGE_KEYS = {
   PIN_CODE: 'auth_pin_code',
   BIOMETRIC_ENABLED: 'auth_biometric_enabled',
   USER_AVATAR_URL: 'user_avatar_url',
+  ACTIVE_TABEL_START: 'active_tabel_start',
 };
 
 
