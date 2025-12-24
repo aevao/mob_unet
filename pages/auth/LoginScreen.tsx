@@ -75,7 +75,7 @@ export const LoginScreen = () => {
         >
           <ThemedCard className="w-full p-5">
             <View className="flex-row items-center justify-between ">
-            <ThemedText variant="title" className="mb-3 text-2xl font-semibold">
+            <ThemedText variant="title" className="mb-3 text-2xl font-medium">
               Вход 
             </ThemedText>
             <KstuLogo size={54} />

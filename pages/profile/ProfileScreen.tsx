@@ -8,14 +8,29 @@ import { ThemedText } from '../../shared/ui/ThemedText';
 import { ThemedCard } from '../../shared/ui/ThemedCard';
 import { useStudentTicketStore } from '../../entities/student/model/studentTicketStore';
 import { useThemeStore } from '../../entities/theme/model/themeStore';
-import { OptimizedImage } from '../../shared/ui/OptimizedImage';
 import { getUserAvatarSync } from '../../shared/lib/getUserAvatar';
+import { useProfileEdit } from './hooks/useProfileEdit';
+import { useAvatarUpload } from './hooks/useAvatarUpload';
+import { EditableField } from './components/EditableField';
+import { AvatarEditor } from './components/AvatarEditor';
 
 export const ProfileScreen = () => {
   const { user, logout, storedAvatarUrl } = useAuthStore();
   const { ticket } = useStudentTicketStore();
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
+
+  const {
+    isEditing,
+    isSaving,
+    formData,
+    startEditing,
+    cancelEditing,
+    updateField,
+    saveProfile,
+  } = useProfileEdit();
+
+  const { isUploading, showImagePickerOptions } = useAvatarUpload();
 
   const fullName = user?.surname && user?.firstName && user?.lastName
     ? `${user.surname} ${user.firstName} ${user.lastName}`
@@ -54,21 +69,13 @@ export const ProfileScreen = () => {
         <View>
           {/* Аватар и основная информация */}
           <ThemedCard className="items-center p-6">
-            <View
-              className={`h-24 w-24 overflow-hidden rounded-full border-4 ${
-                isDark ? 'border-gray-700' : 'border-gray-200'
-              }`}
-            >
-              <OptimizedImage
-                uri={avatarUrl}
-                style={{ width: 96, height: 96 }}
-                resizeMode="cover"
-                fallbackIcon="person"
-                showLoadingIndicator={false}
-              />
-            </View>
+            <AvatarEditor
+              avatarUrl={avatarUrl}
+              onPress={showImagePickerOptions}
+              isUploading={isUploading}
+            />
 
-            <ThemedText variant="title" className="mt-4 text-xl font-bold">
+            <ThemedText variant="title" className="mt-4 text-xl font-sans">
               {fullName}
             </ThemedText>
 
@@ -99,82 +106,107 @@ export const ProfileScreen = () => {
 
           {/* Личная информация */}
           <ThemedCard className="mt-4 p-4">
-            <ThemedText variant="title" className="mb-4 text-lg font-semibold">
-              Личная информация
-            </ThemedText>
-
-            <View className="mb-4">
-              <View className="mb-1 flex-row items-center gap-2">
-                <Ionicons
-                  name="person-outline"
-                  size={18}
-                  color={isDark ? '#9CA3AF' : '#6B7280'}
-                />
-                <ThemedText variant="label" className="text-sm">
-                  Полное имя
-                </ThemedText>
-              </View>
-              <ThemedText variant="body" className="mt-1 text-base font-medium">
-                {fullName}
+            <View className="mb-4 flex-row items-center justify-between">
+              <ThemedText variant="title" className="text-lg font-semibold">
+                Личная информация
               </ThemedText>
+              {!isEditing ? (
+                <Pressable
+                  onPress={startEditing}
+                  className="active:opacity-70"
+                >
+                  <Ionicons
+                    name="create-outline"
+                    size={20}
+                    color={isDark ? '#60A5FA' : '#2563EB'}
+                  />
+                </Pressable>
+              ) : (
+                <View className="flex-row gap-2">
+                  <Pressable
+                    onPress={cancelEditing}
+                    disabled={isSaving}
+                    className="active:opacity-70"
+                  >
+                    <Ionicons
+                      name="close-outline"
+                      size={20}
+                      color={isDark ? '#9CA3AF' : '#6B7280'}
+                    />
+                  </Pressable>
+                  <Pressable
+                    onPress={saveProfile}
+                    disabled={isSaving}
+                    className="active:opacity-70"
+                  >
+                    <Ionicons
+                      name="checkmark-outline"
+                      size={20}
+                      color={isDark ? '#10B981' : '#059669'}
+                    />
+                  </Pressable>
+                </View>
+              )}
             </View>
 
-            {user?.email && (
-              <View className="mb-4">
-                <View className="mb-1 flex-row items-center gap-2">
-                  <Ionicons
-                    name="mail-outline"
-                    size={18}
-                    color={isDark ? '#9CA3AF' : '#6B7280'}
-                  />
-                  <ThemedText variant="label" className="text-sm">
-                    Email
-                  </ThemedText>
-                </View>
-                <ThemedText variant="body" className="mt-1 text-base font-medium">
-                  {user.email}
-                </ThemedText>
-              </View>
-            )}
+            <EditableField
+              icon="person-outline"
+              label="Имя"
+              value={formData.firstName}
+              isEditing={isEditing}
+              onChange={(value) => updateField('firstName', value)}
+              placeholder="Введите имя"
+            />
 
-            {user?.phone && (
-              <View className="mb-4">
-                <View className="mb-1 flex-row items-center gap-2">
-                  <Ionicons
-                    name="call-outline"
-                    size={18}
-                    color={isDark ? '#9CA3AF' : '#6B7280'}
-                  />
-                  <ThemedText variant="label" className="text-sm">
-                    Телефон
-                  </ThemedText>
-                </View>
-                <ThemedText variant="body" className="mt-1 text-base font-medium">
-                  {user.phone}
-                </ThemedText>
-              </View>
-            )}
+            <EditableField
+              icon="person-outline"
+              label="Фамилия"
+              value={formData.lastName}
+              isEditing={isEditing}
+              onChange={(value) => updateField('lastName', value)}
+              placeholder="Введите фамилию"
+            />
 
-            {user?.birthDate && (
-              <View className="mb-4">
-                <View className="mb-1 flex-row items-center gap-2">
-                  <Ionicons
-                    name="calendar-outline"
-                    size={18}
-                    color={isDark ? '#9CA3AF' : '#6B7280'}
-                  />
-                  <ThemedText variant="label" className="text-sm">
-                    Дата рождения
-                  </ThemedText>
-                </View>
-                <ThemedText variant="body" className="mt-1 text-base font-medium">
-                  {user.birthDate}
-                </ThemedText>
-              </View>
-            )}
+            <EditableField
+              icon="person-outline"
+              label="Отчество"
+              value={formData.surname}
+              isEditing={isEditing}
+              onChange={(value) => updateField('surname', value)}
+              placeholder="Введите отчество"
+            />
+
+            <EditableField
+              icon="mail-outline"
+              label="Email"
+              value={formData.email}
+              isEditing={isEditing}
+              onChange={(value) => updateField('email', value)}
+              placeholder="Введите email"
+              keyboardType="email-address"
+            />
+
+            <EditableField
+              icon="call-outline"
+              label="Телефон"
+              value={formData.phone}
+              isEditing={isEditing}
+              onChange={(value) => updateField('phone', value)}
+              placeholder="Введите телефон"
+              keyboardType="phone-pad"
+            />
+
+            <EditableField
+              icon="calendar-outline"
+              label="Дата рождения"
+              value={formData.birthDate}
+              isEditing={isEditing}
+              onChange={(value) => updateField('birthDate', value)}
+              placeholder="ДД.ММ.ГГГГ"
+            />
 
             {ticket?.code_stud && (
-              <View>
+              <View className="mb-4">
                 <View className="mb-1 flex-row items-center gap-2">
                   <Ionicons
                     name="card-outline"
@@ -188,6 +220,27 @@ export const ProfileScreen = () => {
                 <ThemedText variant="body" className="mt-1 text-base font-medium">
                   {ticket.code_stud}
                 </ThemedText>
+              </View>
+            )}
+
+            {isEditing && (
+              <View className="mt-4 flex-row gap-3">
+                <View className="flex-1">
+                  <AppButton
+                    title="Отмена"
+                    onPress={cancelEditing}
+                    variant="outline"
+                    disabled={isSaving}
+                  />
+                </View>
+                <View className="flex-1">
+                  <AppButton
+                    title={isSaving ? 'Сохранение...' : 'Сохранить'}
+                    onPress={saveProfile}
+                    loading={isSaving}
+                    disabled={isSaving}
+                  />
+                </View>
               </View>
             )}
           </ThemedCard>
@@ -213,4 +266,3 @@ export const ProfileScreen = () => {
     </ScreenContainer>
   );
 };
-

@@ -6,58 +6,114 @@ import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '../../shared/ui/ThemedText';
 import { useThemeStore } from '../../entities/theme/model/themeStore';
-
-export interface ScanData {
-  qrCode: string;
-  campus: string;
-  corpus: string;
-  room: string;
-  latitude: number;
-  longitude: number;
-  photo: {
-    uri: string;
-    type: string;
-    name: string;
-  };
-}
+import { postTabel } from '../../entities/attendance/api/attendanceApi';
 
 interface QRScannerModalProps {
   visible: boolean;
   onClose: () => void;
-  onScan: (scanData: ScanData) => void;
+  onSuccess?: () => void;
+  onError?: (error: string) => void;
 }
 
 const { width, height } = Dimensions.get('window');
 
-export const QRScannerModal = ({ visible, onClose, onScan }: QRScannerModalProps) => {
+export const QRScannerModal = ({ visible, onClose, onSuccess, onError }: QRScannerModalProps) => {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const cameraRef = useRef<CameraView>(null);
+  // Используем ref для синхронной защиты от повторных вызовов
+  const isProcessingRef = useRef(false);
 
   useEffect(() => {
     if (visible) {
       setScanned(false);
       setIsProcessing(false);
+      isProcessingRef.current = false;
     }
   }, [visible]);
 
-  const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    if (scanned || isProcessing) return;
+  /**
+   * Парсит URL QR-кода формата http://qr.kstu.kg/<cumpus>/<korpus>/<audit>/
+   * и извлекает части пути
+   */
+  const parseQRUrl = (url: string): { campus: string; corpus: string; room: string } => {
+    try {
+      // Убираем протокол и домен, оставляем только путь
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/').filter((part) => part.length > 0);
 
+      // Формат: /<cumpus>/<korpus>/<audit>/
+      const campus = pathParts[0] || '';
+      const corpus = pathParts[1] || '';
+      const room = pathParts[2] || '';
+
+
+
+      return { campus, corpus, room };
+    } catch (error) {
+      console.error('Error parsing QR URL:', error);
+      return { campus: '', corpus: '', room: '' };
+    }
+  };
+
+  const handleBarCodeScanned = async ({ data }: { data: string }) => {
+    // Синхронная защита от повторных вызовов через ref
+    if (isProcessingRef.current) {
+
+      return;
+    }
+
+    // Устанавливаем флаг синхронно
+    isProcessingRef.current = true;
     setScanned(true);
     setIsProcessing(true);
 
     try {
-      // Парсим QR-код (предполагаем JSON формат)
-      let qrData: any;
-      try {
-        qrData = JSON.parse(data);
-      } catch {
-        // Если не JSON, используем как строку
-        qrData = { qrCode: data };
+      // Проверяем, что QR-код является валидным URL от qr.kstu.kg
+      if (!data.startsWith('http://qr.kstu.kg/') && !data.startsWith('https://qr.kstu.kg/')) {
+        Alert.alert(
+          'Неверный QR-код',
+          'Этот QR-код не является валидным кодом для отметки посещаемости. Пожалуйста, отсканируйте QR-код с официального сайта.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                isProcessingRef.current = false;
+                setIsProcessing(false);
+                setScanned(false);
+                onError?.('Неверный QR-код');
+              },
+            },
+          ],
+        );
+        return;
+      }
+
+      let campus = '';
+      let corpus = '';
+      let room = '';
+
+      // Парсим URL (уже проверили, что это валидный URL от qr.kstu.kg)
+      if (data.startsWith('http://') || data.startsWith('https://')) {
+        const parsed = parseQRUrl(data);
+        campus = parsed.campus;
+        corpus = parsed.corpus;
+        room = parsed.room;
+      } else {
+        // Пытаемся парсить как JSON
+        try {
+          const qrData = JSON.parse(data);
+
+          campus = qrData.campus || qrData.campus_name || '';
+          corpus = qrData.corpus || qrData.corpus_name || '';
+          room = qrData.room || qrData.room_name || '';
+        } catch {
+          // Если не JSON и не URL, используем как строку
+      
+        }
       }
 
       // Получаем геолокацию
@@ -67,6 +123,7 @@ export const QRScannerModal = ({ visible, onClose, onScan }: QRScannerModalProps
           'Доступ к геолокации',
           'Для отметки необходим доступ к геолокации. Пожалуйста, разрешите доступ в настройках приложения.',
         );
+        isProcessingRef.current = false;
         setIsProcessing(false);
         setScanned(false);
         return;
@@ -76,39 +133,49 @@ export const QRScannerModal = ({ visible, onClose, onScan }: QRScannerModalProps
         accuracy: Location.Accuracy.Balanced,
       });
 
-      // Формируем данные для отправки без фото
-      const scanData: ScanData = {
-        qrCode: data,
-        campus: qrData.campus || qrData.campus_name || '',
-        corpus: qrData.corpus || qrData.corpus_name || '',
-        room: qrData.room || qrData.room_name || '',
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        photo: {
-          uri: '', // Фото не требуется при начале работы
-          type: 'image/jpeg',
-          name: '',
-        },
-      };
+     
 
-      // Закрываем модальное окно перед вызовом onScan
+      // Формируем FormData для отправки
+      const formData = new FormData();
+      const auditorium = `${campus}/${corpus}/${room}`;
+      formData.append('auditorium', auditorium);
+      const geoloc_info = `${location.coords.latitude}, ${location.coords.longitude}`;
+      formData.append('geo', geoloc_info);
+
+      // Выполняем запрос на отметку
+      await postTabel(formData);
+
+      // Закрываем модальное окно
       onClose();
-      onScan(scanData);
+      isProcessingRef.current = false;
+      setIsProcessing(false);
+      setScanned(false);
+
+      // Вызываем колбэк успеха
+      Alert.alert('Успешно', 'Вы успешно отметились!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            onSuccess?.();
+          },
+        },
+      ]);
     } catch (error: any) {
       console.error('Error processing scan:', error);
-      Alert.alert(
-        'Ошибка',
-        error.message || 'Не удалось обработать QR-код. Попробуйте снова.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setIsProcessing(false);
-              setScanned(false);
-            },
+      const errorMessage = error?.response?.data?.message || error?.message || 'Не удалось отметиться';
+      
+      isProcessingRef.current = false;
+      setIsProcessing(false);
+      setScanned(false);
+      
+      Alert.alert('Ошибка', errorMessage, [
+        {
+          text: 'OK',
+          onPress: () => {
+            onError?.(errorMessage);
           },
-        ],
-      );
+        },
+      ]);
     }
   };
 
@@ -129,7 +196,7 @@ export const QRScannerModal = ({ visible, onClose, onScan }: QRScannerModalProps
 
   if (!permission.granted) {
     return (
-      <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
         <View
           style={[
             styles.modalContainer,

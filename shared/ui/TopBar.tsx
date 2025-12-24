@@ -1,6 +1,7 @@
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from './ThemedText';
 import { useThemeStore } from '../../entities/theme/model/themeStore';
@@ -8,9 +9,13 @@ import { useAuthStore } from '../../entities/session/model/authStore';
 import { useStudentTicketStore } from '../../entities/student/model/studentTicketStore';
 import { OptimizedImage } from './OptimizedImage';
 import { getUserAvatarSync } from '../../shared/lib/getUserAvatar';
+import { isSectionVisible } from '../../shared/lib/roleUtils';
+import type { HomeStackParamList } from '../../app/navigation/types';
+
+type TopBarNavigationProp = NativeStackNavigationProp<HomeStackParamList>;
 
 export const TopBar = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<TopBarNavigationProp>();
   const { theme, toggleTheme } = useThemeStore();
   const { user, storedAvatarUrl } = useAuthStore();
   const { ticket } = useStudentTicketStore();
@@ -20,6 +25,17 @@ export const TopBar = () => {
 
   const avatarUrl = getUserAvatarSync(user?.avatarUrl, ticket?.photo, storedAvatarUrl);
   const alertNumber = user?.alertNumber ?? 0;
+
+  const showStudentTicket = isSectionVisible(user?.role, ['student']);
+  const showEmployeeCard = isSectionVisible(user?.role, ['employee']);
+
+  const handleAvatarPress = () => {
+    if (showStudentTicket) {
+      navigation.navigate('StudentTicket');
+    } else if (showEmployeeCard) {
+      navigation.navigate('EmployeeCard');
+    }
+  };
 
   return (
     <View
@@ -79,25 +95,27 @@ export const TopBar = () => {
           ) : null}
         </Pressable>
 
-        <View
-          className={`h-10 w-10 overflow-hidden rounded-full border ${
-            isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'
-          }`}
-        >
-          {avatarUrl ? (
-            <OptimizedImage
-              uri={avatarUrl}
-              style={{ width: 40, height: 40 }}
-              resizeMode="cover"
-              fallbackIcon="person"
-              showLoadingIndicator={false}
-            />
-          ) : (
-            <ThemedText variant="body" className="text-center text-xs leading-10">
-              UNET
-            </ThemedText>
-          )}
-        </View>
+        <Pressable onPress={handleAvatarPress} disabled={!showStudentTicket && !showEmployeeCard}>
+          <View
+            className={`h-10 w-10 overflow-hidden rounded-full border ${
+              isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'
+            }`}
+          >
+            {avatarUrl ? (
+              <OptimizedImage
+                uri={avatarUrl}
+                style={{ width: 40, height: 40 }}
+                resizeMode="cover"
+                fallbackIcon="person"
+                showLoadingIndicator={false}
+              />
+            ) : (
+              <ThemedText variant="body" className="text-center text-xs leading-10">
+                UNET
+              </ThemedText>
+            )}
+          </View>
+        </Pressable>
       </View>
     </View>
   );

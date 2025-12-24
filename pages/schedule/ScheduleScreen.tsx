@@ -33,8 +33,7 @@ export const ScheduleScreen = () => {
   const currentDaySchedule = schedule?.[selectedDay] || [];
 
   const handleSelectItem = (item: any) => {
-    // Здесь можно добавить навигацию к деталям занятия
-    console.log('Selected item:', item);
+ 
   };
 
   return (

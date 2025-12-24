@@ -1,68 +1,44 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { View } from 'react-native';
 import { ScreenContainer } from '../../shared/ui/ScreenContainer';
 import { AppScrollView } from '../../shared/ui/AppScrollView';
 import { useStudentTicketStore } from '../../entities/student/model/studentTicketStore';
 import { useAuthStore } from '../../entities/session/model/authStore';
 import { isSectionVisible } from '../../shared/lib/roleUtils';
-import { WelcomeHeader } from '../../widgets/home/WelcomeHeader';
-import { StudentTicketCard } from '../../widgets/home/StudentTicketCard';
-import { EmployeeCard } from '../../widgets/home/EmployeeCard';
-import { SectionsList } from '../../widgets/home/SectionsList';
-import { QrCodeModal } from '../../widgets/home/QrCodeModal';
-import { getUserAvatarSync } from '../../shared/lib/getUserAvatar';
+import { SectionsGrid } from '../../widgets/home/SectionsGrid';
+import { TodayScheduleWidget } from '../../widgets/home/TodayScheduleWidget';
+import { NotificationsWidget } from '../../widgets/home/NotificationsWidget';
+import { AttendanceWidget } from '../../widgets/home/AttendanceWidget';
+import { useScheduleStore } from '../../entities/schedule/model/scheduleStore';
 
 export const HomeScreen = () => {
-  const [qrVisible, setQrVisible] = useState(false);
-  const { ticket, error, fetchTicket } = useStudentTicketStore();
-  const { user, storedAvatarUrl } = useAuthStore();
+  const { fetchTicket } = useStudentTicketStore();
+  const { user } = useAuthStore();
+  const { fetchSchedule } = useScheduleStore();
 
   useEffect(() => {
     // Загружаем данные студенческого только для студентов
     if (isSectionVisible(user?.role, ['student'])) {
       void fetchTicket();
     }
+    // Загружаем расписание для всех
+    void fetchSchedule();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.role]);
 
-  const fullName = ticket
-    ? `${ticket.surname} ${ticket.first_name} ${ticket.last_name}`
-    : user?.name || 'Нет данных';
-  const avatarUrl = getUserAvatarSync(user?.avatarUrl, ticket?.photo, storedAvatarUrl);
-
-  // Студенческий билет показываем только студентам
-  const showStudentTicket = isSectionVisible(user?.role, ['student']);
-  // Карточку сотрудника показываем только сотрудникам
-  const showEmployeeCard = isSectionVisible(user?.role, ['employee']);
-
   return (
     <ScreenContainer>
-      <AppScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-      >
-        <View>
-          <WelcomeHeader fullName={fullName} />
+      <AppScrollView showsVerticalScrollIndicator={false}>
+        <View className="">
+          {isSectionVisible(user?.role, ['student', 'all']) && <TodayScheduleWidget />}
 
-          {showStudentTicket && (
-            <StudentTicketCard
-              ticket={ticket}
-              fullName={fullName}
-              avatarUrl={avatarUrl}
-              error={error}
-              onSharePress={() => setQrVisible(true)}
-            />
-          )}
-
-          {showEmployeeCard && <EmployeeCard user={user} />}
-
-          <SectionsList />
+          {/* Sections Grid */}
+          <SectionsGrid />
+          {/* Widgets */}
+          <NotificationsWidget />
+          <AttendanceWidget />
         </View>
       </AppScrollView>
-
-      {showStudentTicket && (
-        <QrCodeModal visible={qrVisible} onClose={() => setQrVisible(false)} />
-      )}
     </ScreenContainer>
   );
 };

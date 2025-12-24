@@ -102,7 +102,7 @@ const personalDataItems: PersonalDataItem[] = [
 export const PersonalDataScreen = () => {
   const handleItemPress = (item: PersonalDataItem) => {
     // TODO: Навигация к конкретному разделу
-    console.log(`Открыть: ${item.title}`);
+   
   };
 
   return (

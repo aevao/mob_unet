@@ -23,7 +23,7 @@ export const AppScrollView = ({
 
   const defaultStyles = withPadding
     ? {
-        paddingHorizontal: 16,
+        paddingHorizontal: 10,
         paddingTop: 12,
         paddingBottom: bottomPadding,
       }

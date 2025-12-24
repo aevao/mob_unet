@@ -104,8 +104,7 @@ export const ScientificActivityScreen = () => {
                   icon="flask-outline"
                   description={getItemDescription(item)}
                   onPress={() => {
-                    // TODO: Навигация к деталям категории
-                    console.log('Scientific category:', item.id);
+                    
                   }}
                 />
               ))}

@@ -31,6 +31,7 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   user: User | null;
+  storedAvatarUrl: string | null;
   isInitialized: boolean;
   isLoading: boolean;
   error: string | null;
@@ -45,6 +46,7 @@ interface AuthState {
   clearPinCode: () => Promise<void>;
   setBiometricEnabled: (enabled: boolean) => Promise<void>;
   refreshAccessToken: () => Promise<boolean>;
+  setStoredAvatarUrl: (url: string | null) => void;
 }
 
 const buildUser = (token?: string | null): User | null => {
@@ -252,6 +254,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.error('Failed to refresh token:', error);
       return false;
     }
+  },
+
+  setStoredAvatarUrl: (url: string | null) => {
+    set({ storedAvatarUrl: url });
   },
 
 }));

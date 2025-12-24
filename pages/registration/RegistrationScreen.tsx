@@ -18,7 +18,7 @@ export const RegistrationScreen = () => {
 
   const handleSelectStream = (subject: Subject) => {
     // TODO: Реализовать выбор потока
-    console.log('Select stream for subject:', subject);
+    
   };
 
   return (
