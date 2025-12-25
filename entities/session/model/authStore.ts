@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { STORAGE_KEYS } from '../../../shared/lib/storageKeys';
 import { apiClient } from '../../../shared/api/client';
 import { decodeUserFromToken } from '../../../shared/lib/decodeUserFromToken';
+import { saveAvatar, getStoredAvatar, clearStoredAvatar } from '../../../shared/lib/avatarStorage';
 
 const API_BASE_URL = 'https://uadmin.kstu.kg';
 
@@ -96,20 +97,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const accessToken = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       const pinCode = await SecureStore.getItemAsync(STORAGE_KEYS.PIN_CODE);
       const biometricEnabled = await AsyncStorage.getItem(STORAGE_KEYS.BIOMETRIC_ENABLED);
-      const storedAvatarUrl = await AsyncStorage.getItem(STORAGE_KEYS.USER_AVATAR_URL);
 
       const decodedUser = buildUser(accessToken);
+      
+      // Всегда извлекаем аватарку из токена (imeag)
+      // Приоритет: аватарка из токена > сохраненная аватарка
+      let finalStoredAvatarUrl: string | null = null;
+      
+      // Всегда проверяем avatarUrl из токена (imeag)
+      const avatarFromToken = decodedUser?.avatarUrl;
+      if (avatarFromToken && avatarFromToken.trim() !== '') {
+        // Если в токене есть аватарка, сохраняем её
+        console.log('[AuthStore] Avatar found in token:', avatarFromToken.substring(0, 50));
+        finalStoredAvatarUrl = await saveAvatar(avatarFromToken);
+      } else {
+        // Если в токене нет аватарки, используем сохраненную
+        console.log('[AuthStore] No avatar in token, using stored');
+        finalStoredAvatarUrl = await getStoredAvatar();
+      }
 
       set({
         accessToken,
         refreshToken,
         user: decodedUser,
-        storedAvatarUrl,
+        storedAvatarUrl: finalStoredAvatarUrl,
         hasPinCode: !!pinCode,
         isBiometricEnabled: biometricEnabled === 'true',
         isInitialized: true,
       });
     } catch (error) {
+      console.error('Failed to initialize auth store:', error);
       set({ isInitialized: true });
     }
   },
@@ -134,16 +151,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       const user = buildUser(access);
       
-      // Сохраняем фото пользователя в локальное хранилище
-      if (user?.avatarUrl) {
-        await AsyncStorage.setItem(STORAGE_KEYS.USER_AVATAR_URL, user.avatarUrl);
+      // Всегда извлекаем аватарку из токена (imeag) и сохраняем
+      const avatarFromToken = user?.avatarUrl;
+      let savedAvatarUrl: string | null = null;
+      
+      if (avatarFromToken && avatarFromToken.trim() !== '') {
+        console.log('[AuthStore] Login: Avatar found in token:', avatarFromToken.substring(0, 50));
+        savedAvatarUrl = await saveAvatar(avatarFromToken);
+      } else {
+        console.log('[AuthStore] Login: No avatar in token');
+        savedAvatarUrl = await getStoredAvatar();
       }
       
       set({ 
         accessToken: access,
         refreshToken: refresh,
         user,
-        storedAvatarUrl: user?.avatarUrl || null,
+        storedAvatarUrl: savedAvatarUrl,
         isLoading: false, 
         error: null,
       });
@@ -158,10 +182,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
+    // Очищаем сохраненную аватарку (включая файлы)
+    await clearStoredAvatar();
+    
     await AsyncStorage.multiRemove([
       STORAGE_KEYS.ACCESS_TOKEN,
       STORAGE_KEYS.BIOMETRIC_ENABLED,
-      STORAGE_KEYS.USER_AVATAR_URL,
     ]);
     await SecureStore.deleteItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
     await SecureStore.deleteItemAsync(STORAGE_KEYS.PIN_CODE);
@@ -187,16 +213,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     const user = buildUser(accessToken);
     
-    // Обновляем фото пользователя в локальном хранилище, если оно изменилось
-    let finalStoredAvatarUrl = user?.avatarUrl || null;
-    if (user?.avatarUrl) {
-      const storedAvatarUrl = await AsyncStorage.getItem(STORAGE_KEYS.USER_AVATAR_URL);
-      if (storedAvatarUrl !== user.avatarUrl) {
-        await AsyncStorage.setItem(STORAGE_KEYS.USER_AVATAR_URL, user.avatarUrl);
-        finalStoredAvatarUrl = user.avatarUrl;
-      } else {
-        finalStoredAvatarUrl = storedAvatarUrl;
-      }
+    // Всегда извлекаем аватарку из нового токена (imeag)
+    const avatarFromToken = user?.avatarUrl;
+    let finalStoredAvatarUrl: string | null = null;
+    
+    if (avatarFromToken && avatarFromToken.trim() !== '') {
+      // Сохраняем новую аватарку из токена (обрабатывает URL и base64)
+      console.log('[AuthStore] setTokens: Avatar found in token:', avatarFromToken.substring(0, 50));
+      finalStoredAvatarUrl = await saveAvatar(avatarFromToken);
+    } else {
+      // Если в токене нет аватарки, сохраняем текущую сохраненную
+      console.log('[AuthStore] setTokens: No avatar in token, using stored');
+      finalStoredAvatarUrl = await getStoredAvatar();
     }
     
     set({ 

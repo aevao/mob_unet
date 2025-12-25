@@ -51,6 +51,9 @@ export const decodeUserFromToken = (token?: string | null): DecodedUser | null =
       .join(' ')
       .trim();
 
+    // Всегда извлекаем imeag из токена, даже если это null или пустая строка
+    const avatarUrl = data.imeag && data.imeag.trim() !== '' ? data.imeag : null;
+
     return {
       id: data.id?.toString() ?? '',
       name: fullName || '—',
@@ -59,7 +62,7 @@ export const decodeUserFromToken = (token?: string | null): DecodedUser | null =
       surname: data.surname ?? null,
       email: data.email ?? null,
       phone: data.number_phone ?? null,
-      avatarUrl: data.imeag ?? null,
+      avatarUrl,
       gender: data.gender ?? null,
       birthDate: data.data_of_birth ?? null,
       userType: data.user_type ?? null,

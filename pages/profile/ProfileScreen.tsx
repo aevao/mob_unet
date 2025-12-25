@@ -1,51 +1,69 @@
-import { Alert, Pressable, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useMemo } from 'react';
+import { Alert, View } from 'react-native';
 import { ScreenContainer } from '../../shared/ui/ScreenContainer';
 import { AppScrollView } from '../../shared/ui/AppScrollView';
 import { useAuthStore } from '../../entities/session/model/authStore';
 import { AppButton } from '../../shared/ui/AppButton';
-import { ThemedText } from '../../shared/ui/ThemedText';
-import { ThemedCard } from '../../shared/ui/ThemedCard';
 import { useStudentTicketStore } from '../../entities/student/model/studentTicketStore';
-import { useThemeStore } from '../../entities/theme/model/themeStore';
 import { getUserAvatarSync } from '../../shared/lib/getUserAvatar';
 import { useProfileEdit } from './hooks/useProfileEdit';
 import { useAvatarUpload } from './hooks/useAvatarUpload';
-import { EditableField } from './components/EditableField';
-import { AvatarEditor } from './components/AvatarEditor';
+import { ProfileHeader } from './components/ProfileHeader';
+import { ProfileFooter } from './components/ProfileFooter';
+import { ProfileSkeleton } from './components/ProfileSkeleton';
+import { ThemedCard } from '../../shared/ui/ThemedCard';
+import { ProfileFieldInput } from './components/ProfileFieldInput';
+import { PhoneInput } from './components/PhoneInput';
+import { DatePickerField } from './components/DatePickerField';
+import { getPrimaryFields, getSecondaryFields, getUserFullName, getUserRoleLabel } from './utils/getProfileFields';
 
 export const ProfileScreen = () => {
-  const { user, logout, storedAvatarUrl } = useAuthStore();
+  const { user, logout, storedAvatarUrl, isInitialized } = useAuthStore();
   const { ticket } = useStudentTicketStore();
-  const { theme } = useThemeStore();
-  const isDark = theme === 'dark';
 
   const {
     isEditing,
     isSaving,
     formData,
+    errors,
     startEditing,
     cancelEditing,
     updateField,
     saveProfile,
+    saveAvatar,
   } = useProfileEdit();
 
-  const { isUploading, showImagePickerOptions } = useAvatarUpload();
+  const { isUploading, showImagePickerOptions } = useAvatarUpload({
+    onUpload: saveAvatar,
+  });
 
-  const fullName = user?.surname && user?.firstName && user?.lastName
-    ? `${user.surname} ${user.firstName} ${user.lastName}`
-    : user?.name || '—';
+  // Показываем skeleton пока данные загружаются
+  if (!isInitialized || !user) {
+    return (
+      <ScreenContainer>
+        <AppScrollView showsVerticalScrollIndicator={false}>
+          <ProfileSkeleton />
+        </AppScrollView>
+      </ScreenContainer>
+    );
+  }
 
-  const avatarUrl = getUserAvatarSync(user?.avatarUrl, ticket?.photo, storedAvatarUrl);
+  // Вычисляемые значения
+  const fullName = useMemo(() => getUserFullName(user), [user]);
+  const avatarUrl = useMemo(
+    () => getUserAvatarSync(user?.avatarUrl, ticket?.photo, storedAvatarUrl),
+    [user?.avatarUrl, ticket?.photo, storedAvatarUrl],
+  );
+  const roleLabel = useMemo(() => getUserRoleLabel(user?.role), [user?.role]);
 
-  const roleLabel =
-    user?.role === 'teacher'
-      ? 'Преподаватель'
-      : user?.role === 'student'
-        ? 'Студент'
-        : user?.role === 'employee'
-          ? 'Сотрудник'
-          : '—';
+  // Формируем поля профиля
+  const primaryFields = useMemo(() => {
+    return getPrimaryFields(formData, user, errors, updateField as any);
+  }, [formData, user, errors, updateField]);
+
+  const secondaryFields = useMemo(() => {
+    return getSecondaryFields(formData, user, ticket, errors, updateField as any);
+  }, [formData, user, ticket, errors, updateField]);
 
   const handleLogout = () => {
     Alert.alert('Выход', 'Вы уверены, что хотите выйти из аккаунта?', [
@@ -60,208 +78,110 @@ export const ProfileScreen = () => {
     ]);
   };
 
+  const handleEditToggle = () => {
+    if (isEditing) {
+      cancelEditing();
+    } else {
+      startEditing();
+    }
+  };
+
+  const handleAvatarUpload = async () => {
+    await showImagePickerOptions();
+  };
+
   return (
     <ScreenContainer>
       <AppScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
       >
-        <View>
-          {/* Аватар и основная информация */}
-          <ThemedCard className="items-center p-6">
-            <AvatarEditor
-              avatarUrl={avatarUrl}
-              onPress={showImagePickerOptions}
-              isUploading={isUploading}
+        {/* Header с крупным аватаром */}
+        <ProfileHeader
+          avatarUrl={avatarUrl}
+          fullName={fullName}
+          role={user.role}
+          roleLabel={roleLabel}
+          group={ticket?.group}
+          onAvatarPress={handleAvatarUpload}
+          onEditPress={handleEditToggle}
+          isUploading={isUploading}
+          isEditing={isEditing}
+        />
+
+        {/* Основные поля */}
+        <ThemedCard className="mb-3 overflow-hidden rounded-2xl">
+          {primaryFields[0] && (
+            <PhoneInput
+              label={primaryFields[0].label}
+              value={primaryFields[0].value}
+              onChange={primaryFields[0].onChange || (() => {})}
+              isEditing={isEditing}
+              error={primaryFields[0].error}
             />
-
-            <ThemedText variant="title" className="mt-4 text-xl font-sans">
-              {fullName}
-            </ThemedText>
-
-            <View className="mt-2 flex-row items-center gap-1">
-              <Ionicons
-                name="school-outline"
-                size={16}
-                color={isDark ? '#9CA3AF' : '#6B7280'}
+          )}
+          {primaryFields.length > 1 && (
+            <>
+              <View className="h-px bg-gray-200 dark:bg-gray-800 ml-16" />
+              <DatePickerField
+                label={primaryFields[1].label}
+                value={primaryFields[1].value}
+                onChange={primaryFields[1].onChange || (() => {})}
+                isEditing={isEditing}
+                error={primaryFields[1].error}
               />
-              <ThemedText variant="muted" className="text-sm">
-                {roleLabel}
-              </ThemedText>
-            </View>
+            </>
+          )}
+        </ThemedCard>
 
-            {ticket?.group && (
-              <View className="mt-2 flex-row items-center gap-1">
-                <Ionicons
-                  name="people-outline"
-                  size={16}
-                  color={isDark ? '#9CA3AF' : '#6B7280'}
+        {/* Личная информация */}
+        {secondaryFields.length > 0 && (
+          <ThemedCard className="mb-4 overflow-hidden rounded-2xl">
+            {secondaryFields.map((item, index) => (
+              <View key={`${item.icon}-${index}`}>
+                {index > 0 && (
+                  <View className="h-px bg-gray-200 dark:bg-gray-800 ml-16" />
+                )}
+                <ProfileFieldInput
+                  icon={item.icon}
+                  label={item.label}
+                  value={item.value}
+                  onChange={item.onChange || (() => {})}
+                  isEditing={isEditing}
+                  placeholder={item.placeholder}
+                  keyboardType={item.keyboardType}
+                  error={item.error}
+                  editable={item.editable}
                 />
-                <ThemedText variant="muted" className="text-sm">
-                  {ticket.group}
-                </ThemedText>
               </View>
-            )}
+            ))}
           </ThemedCard>
+        )}
 
-          {/* Личная информация */}
-          <ThemedCard className="mt-4 p-4">
-            <View className="mb-4 flex-row items-center justify-between">
-              <ThemedText variant="title" className="text-lg font-semibold">
-                Личная информация
-              </ThemedText>
-              {!isEditing ? (
-                <Pressable
-                  onPress={startEditing}
-                  className="active:opacity-70"
-                >
-                  <Ionicons
-                    name="create-outline"
-                    size={20}
-                    color={isDark ? '#60A5FA' : '#2563EB'}
-                  />
-                </Pressable>
-              ) : (
-                <View className="flex-row gap-2">
-                  <Pressable
-                    onPress={cancelEditing}
-                    disabled={isSaving}
-                    className="active:opacity-70"
-                  >
-                    <Ionicons
-                      name="close-outline"
-                      size={20}
-                      color={isDark ? '#9CA3AF' : '#6B7280'}
-                    />
-                  </Pressable>
-                  <Pressable
-                    onPress={saveProfile}
-                    disabled={isSaving}
-                    className="active:opacity-70"
-                  >
-                    <Ionicons
-                      name="checkmark-outline"
-                      size={20}
-                      color={isDark ? '#10B981' : '#059669'}
-                    />
-                  </Pressable>
-                </View>
-              )}
+        {/* Кнопки сохранения (только в режиме редактирования) */}
+        {isEditing && (
+          <View className="mb-4 flex-row gap-3">
+            <View className="flex-1">
+              <AppButton
+                title="Отмена"
+                onPress={cancelEditing}
+                variant="outline"
+                disabled={isSaving}
+              />
             </View>
-
-            <EditableField
-              icon="person-outline"
-              label="Имя"
-              value={formData.firstName}
-              isEditing={isEditing}
-              onChange={(value) => updateField('firstName', value)}
-              placeholder="Введите имя"
-            />
-
-            <EditableField
-              icon="person-outline"
-              label="Фамилия"
-              value={formData.lastName}
-              isEditing={isEditing}
-              onChange={(value) => updateField('lastName', value)}
-              placeholder="Введите фамилию"
-            />
-
-            <EditableField
-              icon="person-outline"
-              label="Отчество"
-              value={formData.surname}
-              isEditing={isEditing}
-              onChange={(value) => updateField('surname', value)}
-              placeholder="Введите отчество"
-            />
-
-            <EditableField
-              icon="mail-outline"
-              label="Email"
-              value={formData.email}
-              isEditing={isEditing}
-              onChange={(value) => updateField('email', value)}
-              placeholder="Введите email"
-              keyboardType="email-address"
-            />
-
-            <EditableField
-              icon="call-outline"
-              label="Телефон"
-              value={formData.phone}
-              isEditing={isEditing}
-              onChange={(value) => updateField('phone', value)}
-              placeholder="Введите телефон"
-              keyboardType="phone-pad"
-            />
-
-            <EditableField
-              icon="calendar-outline"
-              label="Дата рождения"
-              value={formData.birthDate}
-              isEditing={isEditing}
-              onChange={(value) => updateField('birthDate', value)}
-              placeholder="ДД.ММ.ГГГГ"
-            />
-
-            {ticket?.code_stud && (
-              <View className="mb-4">
-                <View className="mb-1 flex-row items-center gap-2">
-                  <Ionicons
-                    name="card-outline"
-                    size={18}
-                    color={isDark ? '#9CA3AF' : '#6B7280'}
-                  />
-                  <ThemedText variant="label" className="text-sm">
-                    Номер студенческого билета
-                  </ThemedText>
-                </View>
-                <ThemedText variant="body" className="mt-1 text-base font-medium">
-                  {ticket.code_stud}
-                </ThemedText>
-              </View>
-            )}
-
-            {isEditing && (
-              <View className="mt-4 flex-row gap-3">
-                <View className="flex-1">
-                  <AppButton
-                    title="Отмена"
-                    onPress={cancelEditing}
-                    variant="outline"
-                    disabled={isSaving}
-                  />
-                </View>
-                <View className="flex-1">
-                  <AppButton
-                    title={isSaving ? 'Сохранение...' : 'Сохранить'}
-                    onPress={saveProfile}
-                    loading={isSaving}
-                    disabled={isSaving}
-                  />
-                </View>
-              </View>
-            )}
-          </ThemedCard>
-
-          {/* Кнопка выхода */}
-          <View className="mt-6 mb-4">
-            <Pressable
-              onPress={handleLogout}
-              className={`flex-row items-center justify-center rounded-xl border p-4 ${
-                isDark
-                  ? 'border-red-900/50 bg-red-950/30'
-                  : 'border-red-200 bg-red-50'
-              }`}
-            >
-              <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-              <ThemedText variant="body" className="ml-2 text-base font-semibold text-red-500">
-                Выйти из аккаунта
-              </ThemedText>
-            </Pressable>
+            <View className="flex-1">
+              <AppButton
+                title={isSaving ? 'Сохранение...' : 'Сохранить'}
+                onPress={saveProfile}
+                loading={isSaving}
+                disabled={isSaving}
+              />
+            </View>
           </View>
-        </View>
+        )}
+
+        {/* Footer с именем и кнопкой выхода */}
+        <ProfileFooter fullName={fullName} onLogout={handleLogout} />
       </AppScrollView>
     </ScreenContainer>
   );

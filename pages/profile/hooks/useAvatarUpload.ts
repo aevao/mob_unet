@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS } from '../../../shared/lib/storageKeys';
-import { useAuthStore } from '../../../entities/session/model/authStore';
 
-export const useAvatarUpload = () => {
-  const { storedAvatarUrl, setStoredAvatarUrl } = useAuthStore();
+interface UseAvatarUploadProps {
+  onUpload?: (uri: string) => Promise<string | void>;
+}
+
+export const useAvatarUpload = ({ onUpload }: UseAvatarUploadProps = {}) => {
   const [isUploading, setIsUploading] = useState(false);
 
   const pickImage = useCallback(async () => {
@@ -74,58 +74,59 @@ export const useAvatarUpload = () => {
     }
   }, []);
 
-  const showImagePickerOptions = useCallback(() => {
-    Alert.alert(
-      'Выберите фото',
-      'Откуда вы хотите загрузить фото?',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        { text: 'Камера', onPress: async () => {
-          const uri = await takePhoto();
-          if (uri) {
-            await uploadAvatar(uri);
-          }
-        }},
-        { text: 'Галерея', onPress: async () => {
-          const uri = await pickImage();
-          if (uri) {
-            await uploadAvatar(uri);
-          }
-        }},
-      ]
-    );
-  }, [pickImage, takePhoto]);
+  const showImagePickerOptions = useCallback(async () => {
+    return new Promise<string | null>((resolve) => {
+      Alert.alert(
+        'Выберите фото',
+        'Откуда вы хотите загрузить фото?',
+        [
+          { text: 'Отмена', style: 'cancel', onPress: () => resolve(null) },
+          {
+            text: 'Камера',
+            onPress: async () => {
+              const uri = await takePhoto();
+              if (uri) {
+                await uploadAvatar(uri);
+                resolve(uri);
+              } else {
+                resolve(null);
+              }
+            },
+          },
+          {
+            text: 'Галерея',
+            onPress: async () => {
+              const uri = await pickImage();
+              if (uri) {
+                await uploadAvatar(uri);
+                resolve(uri);
+              } else {
+                resolve(null);
+              }
+            },
+          },
+        ]
+      );
+    });
+  }, [pickImage, takePhoto, uploadAvatar]);
 
   const uploadAvatar = useCallback(async (imageUri: string) => {
     try {
       setIsUploading(true);
 
-      // TODO: Заменить на реальный API вызов для загрузки изображения
-      // const formData = new FormData();
-      // formData.append('avatar', {
-      //   uri: imageUri,
-      //   type: 'image/jpeg',
-      //   name: 'avatar.jpg',
-      // } as any);
-      // const response = await apiClient.post('/user/avatar', formData, {
-      //   headers: { 'Content-Type': 'multipart/form-data' },
-      // });
-      // const avatarUrl = response.data.avatarUrl;
-
-      // Временно сохраняем локально до получения API
-      await AsyncStorage.setItem(STORAGE_KEYS.USER_AVATAR_URL, imageUri);
-      
-      // Обновляем store
-      setStoredAvatarUrl(imageUri);
-
-      Alert.alert('Успешно', 'Аватар обновлен');
+      if (onUpload) {
+        await onUpload(imageUri);
+      } else {
+        // Fallback: просто показываем сообщение
+        Alert.alert('Успешно', 'Аватар выбран');
+      }
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      Alert.alert('Ошибка', 'Не удалось загрузить аватар. Попробуйте позже.');
+      // Ошибка уже обработана в onUpload
     } finally {
       setIsUploading(false);
     }
-  }, [setStoredAvatarUrl]);
+  }, [onUpload]);
 
   return {
     isUploading,

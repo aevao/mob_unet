@@ -31,9 +31,9 @@ export const getUserAvatar = async (
 
 /**
  * Синхронная версия для использования в компонентах (использует кеш)
- * @param currentAvatarUrl - Текущий URL аватара из токена или API
- * @param ticketPhoto - Фото из студенческого билета (приоритет выше)
- * @param storedAvatarUrl - Сохраненное фото (передается из store)
+ * @param currentAvatarUrl - Текущий URL аватара из токена (imeag) - приоритет самый высокий
+ * @param ticketPhoto - Фото из студенческого билета (приоритет выше, чем stored)
+ * @param storedAvatarUrl - Сохраненное фото (передается из store) - используется только если нет currentAvatarUrl
  * @returns URL аватара или null
  */
 export const getUserAvatarSync = (
@@ -41,15 +41,18 @@ export const getUserAvatarSync = (
   ticketPhoto?: string | null,
   storedAvatarUrl?: string | null,
 ): string | null => {
-  // Приоритет: ticketPhoto > currentAvatarUrl > сохраненное фото
-  if (ticketPhoto) {
-    return ticketPhoto;
-  }
-
-  if (currentAvatarUrl) {
+  // Приоритет: currentAvatarUrl (из токена) > ticketPhoto > сохраненное фото
+  // Всегда используем аватар из токена, если он есть
+  if (currentAvatarUrl && currentAvatarUrl.trim() !== '') {
     return currentAvatarUrl;
   }
 
-  return storedAvatarUrl || null;
+  // Если нет аватара в токене, используем фото из билета
+  if (ticketPhoto && ticketPhoto.trim() !== '') {
+    return ticketPhoto;
+  }
+
+  // В последнюю очередь используем сохраненное фото
+  return storedAvatarUrl && storedAvatarUrl.trim() !== '' ? storedAvatarUrl : null;
 };
 

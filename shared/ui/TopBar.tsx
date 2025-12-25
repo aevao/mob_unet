@@ -15,7 +15,7 @@ import type { HomeStackParamList } from '../../app/navigation/types';
 type TopBarNavigationProp = NativeStackNavigationProp<HomeStackParamList>;
 
 export const TopBar = () => {
-  const navigation = useNavigation<TopBarNavigationProp>();
+  const navigation = useNavigation();
   const { theme, toggleTheme } = useThemeStore();
   const { user, storedAvatarUrl } = useAuthStore();
   const { ticket } = useStudentTicketStore();
@@ -30,10 +30,25 @@ export const TopBar = () => {
   const showEmployeeCard = isSectionVisible(user?.role, ['employee']);
 
   const handleAvatarPress = () => {
-    if (showStudentTicket) {
-      navigation.navigate('StudentTicket');
-    } else if (showEmployeeCard) {
-      navigation.navigate('EmployeeCard');
+    try {
+      // Пытаемся навигировать через родительский навигатор (HomeTab)
+      const parent = navigation.getParent();
+      if (parent) {
+        if (showStudentTicket) {
+          (parent as any).navigate('HomeTab', { screen: 'StudentTicket' });
+        } else if (showEmployeeCard) {
+          (parent as any).navigate('HomeTab', { screen: 'EmployeeCard' });
+        }
+      } else {
+        // Если нет родителя, пробуем прямую навигацию (для HomeStack)
+        if (showStudentTicket) {
+          (navigation as any).navigate('StudentTicket');
+        } else if (showEmployeeCard) {
+          (navigation as any).navigate('EmployeeCard');
+        }
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
     }
   };
 

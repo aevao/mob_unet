@@ -15,7 +15,7 @@ interface OptimizedImageProps {
 
 export const OptimizedImage = ({
   uri,
-  defaultUri = 'https://uadmin.kstu.kg/media/avatars/default.jpg',
+  defaultUri,
   style,
   className,
   resizeMode = 'cover',
@@ -49,16 +49,16 @@ export const OptimizedImage = ({
   const handleError = () => {
     setIsLoading(false);
     setHasError(true);
-    // Если основное изображение не загрузилось, пробуем загрузить дефолтное
-    if (currentUri !== defaultUri) {
+    // Если основное изображение не загрузилось и есть defaultUri, пробуем загрузить дефолтное
+    if (defaultUri && currentUri !== defaultUri) {
       setCurrentUri(defaultUri);
       setHasError(false);
       setIsLoading(true);
     }
   };
 
-  // Если нет URI или ошибка после всех попыток
-  if (!currentUri || (hasError && currentUri === defaultUri)) {
+  // Если нет URI или ошибка после всех попыток (если defaultUri был использован)
+  if (!currentUri || (hasError && defaultUri && currentUri === defaultUri)) {
     return (
       <View
         className={className}
@@ -73,7 +73,7 @@ export const OptimizedImage = ({
       >
         <Ionicons
           name={fallbackIcon}
-          size={typeof style === 'object' && 'width' in style && typeof style.width === 'number'
+          size={typeof style === 'object' && style !== null && 'width' in style && typeof style.width === 'number'
             ? style.width / 2
             : 32}
           color={isDark ? '#9CA3AF' : '#6B7280'}
