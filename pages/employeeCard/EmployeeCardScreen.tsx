@@ -10,6 +10,7 @@ import { getUserAvatarSync } from '../../shared/lib/getUserAvatar';
 import { OptimizedImage } from '../../shared/ui/OptimizedImage';
 import { QrCodeModal } from '../../widgets/home/QrCodeModal';
 import { useThemeStore } from '../../entities/theme/model/themeStore';
+import { KstuLogo } from '../../shared/ui/KstuLogo';
 export const EmployeeCardScreen = () => {
   const { user, storedAvatarUrl } = useAuthStore();
   const { theme } = useThemeStore();
@@ -41,10 +42,10 @@ export const EmployeeCardScreen = () => {
             {/* Логотип по центру с opacity и зеркальным отражением */}
             <View
               className="absolute h-full w-96 inset-0 items-center justify-center mt-20"
-              style={{ opacity: 1 }}
+              style={{ opacity: 0.3 }}
             >
               <View >
-                {/* <BackgroundLogo size={700} /> */}
+                <KstuLogo size={150} />
               </View>
             </View>
 
