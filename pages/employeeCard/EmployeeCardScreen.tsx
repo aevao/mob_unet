@@ -10,7 +10,6 @@ import { getUserAvatarSync } from '../../shared/lib/getUserAvatar';
 import { OptimizedImage } from '../../shared/ui/OptimizedImage';
 import { QrCodeModal } from '../../widgets/home/QrCodeModal';
 import { useThemeStore } from '../../entities/theme/model/themeStore';
-import { BackgroundLogo } from '../../shared/ui/backgroundLogo';
 export const EmployeeCardScreen = () => {
   const { user, storedAvatarUrl } = useAuthStore();
   const { theme } = useThemeStore();

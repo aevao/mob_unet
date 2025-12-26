@@ -25,6 +25,14 @@ export type HomeStackParamList = {
   EmployeeCard: undefined;
   Vedomost: undefined;
   ElectronicJournal: undefined;
+  MilitaryRegistration: undefined;
+  ResidencePlace: undefined;
+  Education: undefined;
+  Vacation: undefined;
+  AbroadStay: undefined;
+  Family: undefined;
+  Employment: undefined;
+  Language: undefined;
 };
 
 export type GradesStackParamList = {

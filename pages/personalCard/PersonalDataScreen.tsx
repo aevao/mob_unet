@@ -1,15 +1,26 @@
+import { useState } from 'react';
 import { View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScreenContainer } from '../../shared/ui/ScreenContainer';
 import { AppScrollView } from '../../shared/ui/AppScrollView';
 import { ThemedText } from '../../shared/ui/ThemedText';
 import { SectionCard } from '../../shared/ui/SectionCard';
 import type { Ionicons } from '@expo/vector-icons';
+import type { HomeStackParamList } from '../../app/navigation/types';
+import { OfficialRankModal } from '../../widgets/personalCard/OfficialRankModal';
+import { MedicalExaminationModal } from '../../widgets/personalCard/MedicalExaminationModal';
+import { AwardModal } from '../../widgets/personalCard/AwardModal';
+import { TrainingModal } from '../../widgets/personalCard/TrainingModal';
+
+type PersonalDataNavigationProp = NativeStackNavigationProp<HomeStackParamList>;
 
 interface PersonalDataItem {
   id: string;
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
   description?: string;
+  isModal?: boolean;
 }
 
 const personalDataItems: PersonalDataItem[] = [
@@ -20,28 +31,10 @@ const personalDataItems: PersonalDataItem[] = [
     description: 'Информация о воинском учете и военной службе',
   },
   {
-    id: 'diplomatic',
-    title: 'Дипломатический ранг',
-    icon: 'ribbon-outline',
-    description: 'Дипломатические звания и ранги',
-  },
-  {
-    id: 'medical',
-    title: 'Медосмотр',
-    icon: 'medical-outline',
-    description: 'Медицинские осмотры и справки о здоровье',
-  },
-  {
     id: 'residence',
     title: 'Место жительства',
     icon: 'location-outline',
     description: 'Адрес регистрации и фактического проживания',
-  },
-  {
-    id: 'awards',
-    title: 'Награды',
-    icon: 'trophy-outline',
-    description: 'Награды, поощрения и достижения',
   },
   {
     id: 'education',
@@ -74,35 +67,92 @@ const personalDataItems: PersonalDataItem[] = [
     description: 'Трудовой стаж и история работы',
   },
   {
-    id: 'staffing',
-    title: 'Штатное расписание',
-    icon: 'document-text-outline',
-    description: 'Должность и штатная единица',
-  },
-  {
-    id: 'qualification',
-    title: 'Повышение квалификации',
-    icon: 'trending-up-outline',
-    description: 'Курсы повышения квалификации и переподготовка',
-  },
-  {
     id: 'languages',
     title: 'Знание языков',
     icon: 'chatbubbles-outline',
     description: 'Изучаемые и известные иностранные языки',
   },
   {
-    id: 'personal',
-    title: 'Персональные данные',
-    icon: 'person-outline',
-    description: 'Основная личная информация',
+    id: 'diplomatic',
+    title: 'Дипломатический ранг',
+    icon: 'ribbon-outline',
+    description: 'Дипломатические звания и ранги',
+    isModal: true,
+  },
+  {
+    id: 'medical',
+    title: 'Медосмотр',
+    icon: 'medical-outline',
+    description: 'Медицинские осмотры и справки о здоровье',
+    isModal: true,
+  },
+  {
+    id: 'awards',
+    title: 'Награды',
+    icon: 'trophy-outline',
+    description: 'Награды, поощрения и достижения',
+    isModal: true,
+  },
+  {
+    id: 'qualification',
+    title: 'Повышение квалификации',
+    icon: 'trending-up-outline',
+    description: 'Курсы повышения квалификации и переподготовка',
+    isModal: true,
   },
 ];
 
 export const PersonalDataScreen = () => {
+  const navigation = useNavigation<PersonalDataNavigationProp>();
+  const [officialRankVisible, setOfficialRankVisible] = useState(false);
+  const [medicalExaminationVisible, setMedicalExaminationVisible] = useState(false);
+  const [awardVisible, setAwardVisible] = useState(false);
+  const [trainingVisible, setTrainingVisible] = useState(false);
+
   const handleItemPress = (item: PersonalDataItem) => {
-    // TODO: Навигация к конкретному разделу
-   
+    if (item.isModal) {
+      switch (item.id) {
+        case 'diplomatic':
+          setOfficialRankVisible(true);
+          break;
+        case 'medical':
+          setMedicalExaminationVisible(true);
+          break;
+        case 'awards':
+          setAwardVisible(true);
+          break;
+        case 'qualification':
+          setTrainingVisible(true);
+          break;
+      }
+    } else {
+      switch (item.id) {
+        case 'military':
+          navigation.navigate('MilitaryRegistration');
+          break;
+        case 'residence':
+          navigation.navigate('ResidencePlace');
+          break;
+        case 'education':
+          navigation.navigate('Education');
+          break;
+        case 'vacation':
+          navigation.navigate('Vacation');
+          break;
+        case 'abroad':
+          navigation.navigate('AbroadStay');
+          break;
+        case 'marital':
+          navigation.navigate('Family');
+          break;
+        case 'work':
+          navigation.navigate('Employment');
+          break;
+        case 'languages':
+          navigation.navigate('Language');
+          break;
+      }
+    }
   };
 
   return (
@@ -129,6 +179,23 @@ export const PersonalDataScreen = () => {
           </View>
         </View>
       </AppScrollView>
+
+      <OfficialRankModal
+        visible={officialRankVisible}
+        onClose={() => setOfficialRankVisible(false)}
+      />
+      <MedicalExaminationModal
+        visible={medicalExaminationVisible}
+        onClose={() => setMedicalExaminationVisible(false)}
+      />
+      <AwardModal
+        visible={awardVisible}
+        onClose={() => setAwardVisible(false)}
+      />
+      <TrainingModal
+        visible={trainingVisible}
+        onClose={() => setTrainingVisible(false)}
+      />
     </ScreenContainer>
   );
 };

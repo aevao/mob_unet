@@ -8,7 +8,7 @@ export const ElectronicJournalScreen = () => {
   return (
     <ScreenContainer>
       <AppScrollView showsVerticalScrollIndicator={false}>
-        <View className="p-4">
+        <View>
           <ThemedCard className="p-6">
             <ThemedText variant="title" className="mb-4 text-center text-xl font-bold">
               Электронный журнал

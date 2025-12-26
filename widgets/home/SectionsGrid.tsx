@@ -53,7 +53,7 @@ const SECTIONS: Section[] = [
     color: '#60A5FA', // Мягкий синий
   },
   {
-    title: 'Табель',
+    title: 'Учет времени',
     icon: 'calendar-outline',
     description: 'Отметка посещаемости',
     route: 'Tab',
@@ -65,6 +65,7 @@ const SECTIONS: Section[] = [
     description: 'Посещаемость студентов',
     route: 'ElectronicJournal',
     color: '#60A5FA', // Мягкий синий
+    roles: ['employee'],
   },
   {
     title: 'Документооборот',
@@ -78,6 +79,7 @@ const SECTIONS: Section[] = [
     icon: 'list-outline',
     description: 'Выставление оценок',
     route: 'Vedomost',
+    roles: ['employee'],
     color: '#60A5FA', // Мягкий синий
   },
 ];

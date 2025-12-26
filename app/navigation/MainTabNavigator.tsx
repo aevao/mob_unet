@@ -26,6 +26,14 @@ import { RegistrationScreen } from '../../pages/registration/RegistrationScreen'
 import { PersonalCardScreen } from '../../pages/personalCard/PersonalCardScreen';
 import { PersonalDataScreen } from '../../pages/personalCard/PersonalDataScreen';
 import { ScientificActivityScreen } from '../../pages/personalCard/ScientificActivityScreen';
+import { MilitaryRegistrationForm } from '../../widgets/personalCard/MilitaryRegistrationForm';
+import { ResidencePlaceForm } from '../../widgets/personalCard/ResidencePlaceForm';
+import { EducationForm } from '../../widgets/personalCard/EducationForm';
+import { VacationForm } from '../../widgets/personalCard/VacationForm';
+import { AbroadStayForm } from '../../widgets/personalCard/AbroadStayForm';
+import { FamilyForm } from '../../widgets/personalCard/FamilyForm';
+import { EmploymentForm } from '../../widgets/personalCard/EmploymentForm';
+import { LanguageForm } from '../../widgets/personalCard/LanguageForm';
 import { TabScreen } from '../../pages/attendance/TabScreen';
 import { StudentTicketScreen } from '../../pages/studentTicket/StudentTicketScreen';
 import { EmployeeCardScreen } from '../../pages/employeeCard/EmployeeCardScreen';
@@ -149,6 +157,46 @@ const HomeStackNavigator = () => {
         name="ScientificActivity"
         component={ScientificActivityScreen}
         options={{ title: 'Научная деятельность' }}
+      />
+      <HomeStack.Screen
+        name="MilitaryRegistration"
+        component={MilitaryRegistrationForm}
+        options={{ title: 'Воинский учет' }}
+      />
+      <HomeStack.Screen
+        name="ResidencePlace"
+        component={ResidencePlaceForm}
+        options={{ title: 'Место жительства' }}
+      />
+      <HomeStack.Screen
+        name="Education"
+        component={EducationForm}
+        options={{ title: 'Образование' }}
+      />
+      <HomeStack.Screen
+        name="Vacation"
+        component={VacationForm}
+        options={{ title: 'Отпуск' }}
+      />
+      <HomeStack.Screen
+        name="AbroadStay"
+        component={AbroadStayForm}
+        options={{ title: 'Прибывание за границей' }}
+      />
+      <HomeStack.Screen
+        name="Family"
+        component={FamilyForm}
+        options={{ title: 'Семейное положение' }}
+      />
+      <HomeStack.Screen
+        name="Employment"
+        component={EmploymentForm}
+        options={{ title: 'Трудовая деятельность' }}
+      />
+      <HomeStack.Screen
+        name="Language"
+        component={LanguageForm}
+        options={{ title: 'Знание языков' }}
       />
       <HomeStack.Screen
         name="Tab"
